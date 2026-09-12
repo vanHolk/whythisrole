@@ -1,6 +1,6 @@
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { STEP_LABELS } from '../lib/constants.ts'
+import { STEP_LABELS } from '../lib/constants'
 
 const PRIMARY_CHEVRON_LABELS = new Set(['Next', 'Continue'])
 

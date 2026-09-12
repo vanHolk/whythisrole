@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react'
-import { PROMPTER_SPEEDS, type PrompterSpeed } from '../lib/constants.ts'
-import type { CueMode } from '../lib/types.ts'
+import { PROMPTER_SPEEDS, type PrompterSpeed } from '../lib/constants'
+import type { CueMode } from '../lib/types'
 
 type CueDisplayProps = {
   text: string

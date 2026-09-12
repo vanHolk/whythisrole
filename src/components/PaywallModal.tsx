@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { PRICE_LABEL } from '../lib/constants.ts'
+import { PRICE_LABEL } from '../lib/constants'
 
 type PaywallModalProps = {
   open: boolean

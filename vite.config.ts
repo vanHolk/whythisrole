@@ -1,4 +1,4 @@
-import { localApiPlugin } from './vite-plugin-local-api.ts'
+import { localApiPlugin } from './vite-plugin-local-api'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 

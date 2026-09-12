@@ -1,6 +1,6 @@
-import { enforceRateLimit } from './rate-limit.ts'
-import { validateGenerateInput } from '../src/lib/generate-input.ts'
-import type { GenerateResponse } from '../src/lib/types.ts'
+import { enforceRateLimit } from './rate-limit'
+import { validateGenerateInput } from '../src/lib/generate-input'
+import type { GenerateResponse } from '../src/lib/types'
 
 export const config = { runtime: 'edge' }
 

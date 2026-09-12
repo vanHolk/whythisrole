@@ -10,12 +10,12 @@ import {
   pickSaveToast,
   pickTakeToast,
   type PrompterSpeed,
-} from '../lib/constants.ts'
-import { pickRecorderFormat } from '../lib/recording.ts'
-import type { CueMode, RecordedClip } from '../lib/types.ts'
-import { AudioMeter } from './AudioMeter.tsx'
-import { BottomBar } from './BottomBar.tsx'
-import { CueDisplay } from './CueDisplay.tsx'
+} from '../lib/constants'
+import { pickRecorderFormat } from '../lib/recording'
+import type { CueMode, RecordedClip } from '../lib/types'
+import { AudioMeter } from './AudioMeter'
+import { BottomBar } from './BottomBar'
+import { CueDisplay } from './CueDisplay'
 
 type Phase = 'need-permission' | 'ready' | 'countdown' | 'recording' | 'review' | 'download'
 

@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react'
-import type { CueMode, CueSelection } from '../lib/types.ts'
+import type { CueMode, CueSelection } from '../lib/types'
 
 type CuePickerStepProps = {
   bullets: string

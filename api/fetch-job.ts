@@ -1,4 +1,4 @@
-import { enforceRateLimit } from './rate-limit.ts'
+import { enforceRateLimit } from './rate-limit'
 
 // Edge runtime: Node `dns` is unavailable here (and Vercel uses this file's
 // `runtime: 'edge'`). Resolve via Cloudflare DNS-over-HTTPS, then fetch with

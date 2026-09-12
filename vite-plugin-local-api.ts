@@ -71,17 +71,17 @@ export function localApiPlugin(): Plugin {
 
         try {
           if (url === '/api/generate') {
-            const { default: handler } = await import('./api/generate.ts')
+            const { default: handler } = await import('./api/generate')
             await pipeToNode(handler, req, res, url)
             return
           }
           if (url === '/api/create-payment') {
-            const { default: handler } = await import('./api/create-payment.ts')
+            const { default: handler } = await import('./api/create-payment')
             await pipeToNode(handler, req, res, url)
             return
           }
           if (url === '/api/fetch-job') {
-            const { default: handler } = await import('./api/fetch-job.ts')
+            const { default: handler } = await import('./api/fetch-job')
             await pipeToNode(handler, req, res, url)
             return
           }

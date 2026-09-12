@@ -1,21 +1,21 @@
 import { Lock } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
-import { AppHeader } from './components/AppHeader.tsx'
-import { BottomBar } from './components/BottomBar.tsx'
-import { CameraRecorder } from './components/CameraRecorder.tsx'
-import { CuePickerStep } from './components/CuePickerStep.tsx'
-import { GuidePage } from './components/GuidePage.tsx'
-import { PrivacyPage } from './components/PrivacyPage.tsx'
-import { JobPasteStep } from './components/JobPasteStep.tsx'
-import { PaywallModal } from './components/PaywallModal.tsx'
+import { AppHeader } from './components/AppHeader'
+import { BottomBar } from './components/BottomBar'
+import { CameraRecorder } from './components/CameraRecorder'
+import { CuePickerStep } from './components/CuePickerStep'
+import { GuidePage } from './components/GuidePage'
+import { PrivacyPage } from './components/PrivacyPage'
+import { JobPasteStep } from './components/JobPasteStep'
+import { PaywallModal } from './components/PaywallModal'
 import {
   PRICE_LABEL,
   formatTimer,
   requiresPayment,
   type PrompterSpeed,
-} from './lib/constants.ts'
-import { bakeDownloadWatermark, clipFilename, downloadBlob } from './lib/recording.ts'
-import type { CueMode, CueSelection, RecordedClip } from './lib/types.ts'
+} from './lib/constants'
+import { bakeDownloadWatermark, clipFilename, downloadBlob } from './lib/recording'
+import type { CueMode, CueSelection, RecordedClip } from './lib/types'
 
 type Step = 1 | 2 | 3
 

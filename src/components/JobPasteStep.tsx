@@ -6,7 +6,7 @@ import {
   combinedGenerateLength,
   generateTooLongMessage,
   validateGenerateInput,
-} from '../lib/generate-input.ts'
+} from '../lib/generate-input'
 
 const FETCH_FAIL = "Couldn't pull text automatically, paste it in above"
 const FETCH_RATE_LIMIT = 'Too many requests, try again in a minute'
