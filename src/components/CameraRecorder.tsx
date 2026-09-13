@@ -10,6 +10,7 @@ import {
   pickTakeToast,
   type PrompterSpeed,
 } from '../lib/constants'
+import { cameraErrorMessage, getCameraMicStream, isTouchRecordingDevice } from '../lib/media'
 import { pickRecorderFormat } from '../lib/recording'
 import type { CueMode, RecordedClip } from '../lib/types'
 import { AudioMeter } from './AudioMeter'
@@ -82,7 +83,7 @@ export function CameraRecorder({
   const isLivePreview = permissionState === 'live' && (phase === 'ready' || phase === 'countdown' || phase === 'recording')
 
   useEffect(() => {
-    void enableCamera(!clip)
+    if (!clip) void maybeAutoEnable()
     return () => {
       window.clearInterval(tickRef.current)
       window.clearTimeout(previewTickRef.current)
@@ -102,6 +103,8 @@ export function CameraRecorder({
     video.srcObject = null
     video.controls = true
     video.muted = false
+    video.setAttribute('playsinline', 'true')
+    video.setAttribute('webkit-playsinline', 'true')
     if (video.src !== url) video.src = url
     const showFrame = () => {
       if (video.currentTime === 0) video.currentTime = 0.05
@@ -137,6 +140,8 @@ export function CameraRecorder({
     const video = videoRef.current
     if (!video) return
     video.controls = false
+    video.setAttribute('playsinline', 'true')
+    video.setAttribute('webkit-playsinline', 'true')
     video.removeAttribute('src')
     video.srcObject = stream
     video.muted = true
@@ -145,14 +150,17 @@ export function CameraRecorder({
     })
   }
 
+  async function maybeAutoEnable() {
+    if (isTouchRecordingDevice()) return
+    await enableCamera(true)
+  }
+
   async function enableCamera(attachPreview = true) {
+    const streamPromise = getCameraMicStream()
     setError(null)
     setPermissionState('pending')
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: true,
-      })
+      const stream = await streamPromise
       streamRef.current = stream
       setStreamVersion((value) => value + 1)
       if (attachPreview) attachStream(stream)
@@ -173,14 +181,12 @@ export function CameraRecorder({
       )?.label
       setCameraName(videoLabel || stream.getVideoTracks()[0]?.label || 'Camera')
       setMicName(audioLabel || stream.getAudioTracks()[0]?.label || 'Microphone')
-    } catch {
+    } catch (error) {
       setPermissionState('denied')
       setPhase((current) =>
         current === 'review' || current === 'download' ? current : 'need-permission',
       )
-      setError(
-        'Camera and microphone access is required to record. Check the browser prompt and try again.',
-      )
+      setError(cameraErrorMessage(error))
     }
   }
 
@@ -225,6 +231,8 @@ export function CameraRecorder({
     const video = videoRef.current
     if (video) {
       video.controls = false
+      video.setAttribute('playsinline', 'true')
+      video.setAttribute('webkit-playsinline', 'true')
       video.removeAttribute('src')
       video.srcObject = stream
       video.muted = true
@@ -268,6 +276,8 @@ export function CameraRecorder({
         playback.src = objectUrl
         playback.controls = true
         playback.muted = false
+        playback.setAttribute('playsinline', 'true')
+        playback.setAttribute('webkit-playsinline', 'true')
       }
 
       onClipChange({ blob, durationMs, extension, objectUrl })
@@ -280,10 +290,14 @@ export function CameraRecorder({
     setPhase('recording')
 
     try {
-      recorder.start(250)
+      try {
+        recorder.start(250)
+      } catch {
+        recorder.start()
+      }
     } catch {
       startingRef.current = false
-      setError('Could not start the recorder in this browser.')
+      setError('Could not start the recorder in this browser. Try Safari or Chrome.')
       setPhase('ready')
       return
     }
@@ -333,6 +347,8 @@ export function CameraRecorder({
     const video = videoRef.current
     if (video) {
       video.controls = false
+      video.setAttribute('playsinline', 'true')
+      video.setAttribute('webkit-playsinline', 'true')
       video.removeAttribute('src')
       video.muted = true
       video.srcObject = stream
@@ -378,7 +394,16 @@ export function CameraRecorder({
 
   const primary =
     phase === 'need-permission'
-      ? { label: permissionState === 'pending' ? 'Requesting access…' : 'Enable camera & mic', disabled: permissionState === 'pending', danger: false }
+      ? {
+          label:
+            permissionState === 'pending'
+              ? 'Waiting…'
+              : isTouchRecordingDevice()
+                ? 'Enable camera'
+                : 'Enable camera & mic',
+          disabled: permissionState === 'pending',
+          danger: false,
+        }
       : phase === 'ready'
         ? { label: 'Start recording', disabled: permissionState !== 'live', danger: false }
         : phase === 'countdown'
@@ -406,7 +431,20 @@ export function CameraRecorder({
 
         {phase === 'need-permission' ? (
           <div className="stage-empty is-light">
-            <p>Turn on your camera when you are ready to record.</p>
+            <p>
+              {permissionState === 'pending'
+                ? 'Allow camera and microphone when the browser asks.'
+                : 'Turn on your camera when you are ready to record.'}
+            </p>
+            {permissionState !== 'pending' ? (
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => void enableCamera()}
+              >
+                Enable camera
+              </button>
+            ) : null}
           </div>
         ) : null}
 

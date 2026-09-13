@@ -7,7 +7,7 @@ const CANDIDATES: RecorderFormat[] = [
   { mimeType: 'video/webm;codecs=vp9,opus', extension: 'webm' },
   { mimeType: 'video/webm;codecs=vp8,opus', extension: 'webm' },
   { mimeType: 'video/webm', extension: 'webm' },
-  // Safari best-effort only — spec output is webm.
+  { mimeType: 'video/mp4;codecs=avc1,mp4a.40.2', extension: 'mp4' },
   { mimeType: 'video/mp4', extension: 'mp4' },
 ]
 
@@ -25,7 +25,23 @@ export function pickRecorderFormat(): RecorderFormat {
   return { mimeType: '', extension: 'webm' }
 }
 
-export function downloadBlob(blob: Blob, filename: string): void {
+export async function downloadBlob(blob: Blob, filename: string): Promise<void> {
+  const type = blob.type || (filename.endsWith('.mp4') ? 'video/mp4' : 'video/webm')
+  const file = new File([blob], filename, { type })
+  const canShareFiles =
+    typeof navigator !== 'undefined' &&
+    typeof navigator.canShare === 'function' &&
+    navigator.canShare({ files: [file] })
+
+  if (canShareFiles && window.matchMedia('(pointer: coarse)').matches) {
+    try {
+      await navigator.share({ files: [file], title: filename })
+      return
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return
+    }
+  }
+
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
   anchor.href = url
@@ -33,7 +49,7 @@ export function downloadBlob(blob: Blob, filename: string): void {
   document.body.append(anchor)
   anchor.click()
   anchor.remove()
-  URL.revokeObjectURL(url)
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 /** Short product URL burned into the downloaded file only. */

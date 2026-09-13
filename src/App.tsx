@@ -111,7 +111,7 @@ function Funnel() {
       if (result.blob !== clip.blob) {
         bakedRef.current = { source: clip.blob, result }
       }
-      downloadBlob(result.blob, clipFilename(result.extension))
+      await downloadBlob(result.blob, clipFilename(result.extension))
       setDownloadCount((count) => count + 1)
     } finally {
       preparingRef.current = false
@@ -175,7 +175,7 @@ function Funnel() {
           <footer className="footer">
             <p className="footer-trust">
               <Lock size={18} strokeWidth={2} aria-hidden="true" />
-              Video never leaves this browser tab. No account. Desktop web for now.
+              Video never leaves this browser tab. No account.
             </p>
             <p>
               Not affiliated with LinkedIn.{' '}
@@ -231,7 +231,7 @@ function Funnel() {
           <footer className="footer">
             <p className="footer-trust">
               <Lock size={18} strokeWidth={2} aria-hidden="true" />
-              Video never leaves this browser tab. No account. Desktop web for now.
+              Video never leaves this browser tab. No account.
             </p>
             <p>
               Not affiliated with LinkedIn.{' '}
