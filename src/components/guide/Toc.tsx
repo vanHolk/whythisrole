@@ -1,20 +1,29 @@
 export const GUIDE_SECTIONS = [
-  { id: 'why-employers-ask', label: 'Why employers ask this' },
-  { id: 'what-a-strong-answer-includes', label: 'What a strong answer includes' },
-  { id: 'a-simple-answer-formula', label: 'A simple answer formula' },
-  { id: 'example-answers', label: '3 example answers' },
+  { id: 'what-employers-ask', label: 'What employers are actually asking' },
+  { id: 'three-part-answer', label: 'A simple 3-part answer' },
+  { id: 'how-long', label: 'How long should your video answer be?' },
+  { id: 'example-1', label: 'Examples' },
+  { id: 'need-a-job', label: 'What if you mostly applied because you need a job?' },
   { id: 'common-mistakes', label: 'Common mistakes' },
-  { id: 'final-tip', label: 'Final tip before recording' },
+  { id: 'before-you-record', label: 'Before you record' },
+  { id: 'bullet-points-or-script', label: 'Should you use bullet points or a full script?' },
+  { id: 'turn-notes-into-answer', label: 'Turn your notes into a short video answer' },
 ] as const
+
+export type TocSection = {
+  id: string
+  label: string
+}
 
 type TocProps = {
   variant?: 'sidebar' | 'mobile'
+  sections?: readonly TocSection[]
 }
 
-export function Toc({ variant = 'sidebar' }: TocProps) {
+export function Toc({ variant = 'sidebar', sections = GUIDE_SECTIONS }: TocProps) {
   const list = (
     <ol className="toc-list">
-      {GUIDE_SECTIONS.map((section) => (
+      {sections.map((section) => (
         <li key={section.id}>
           <a href={`#${section.id}`}>{section.label}</a>
         </li>

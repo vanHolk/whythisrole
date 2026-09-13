@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { EditorialFooter } from './guide/EditorialFooter'
 import { EditorialHeader } from './guide/EditorialHeader'
+import { HOW_LONG_GUIDE_PATH, READ_FROM_SCRIPT_PATH } from './guide/paths'
 import './guide/editorial.css'
 
 const PAGE_TITLE = 'FAQ · whythisrole'
@@ -50,8 +51,11 @@ export function FaqPage() {
               <p>
                 For “Why do you want to work here?”, 45 to 90 seconds is enough
                 for most one-way prompts. Stay under any cap the employer set.
-                The <a href="/guide">guide</a> has a simple formula and
-                examples.
+                The{' '}
+                <a href={HOW_LONG_GUIDE_PATH}>
+                  length guide
+                </a>{' '}
+                has a practical range and when to stop.
               </p>
             </section>
             <section className="faq-item">
@@ -60,7 +64,10 @@ export function FaqPage() {
                 Yes, if it still sounds spoken. Write short sentences, glance
                 at the cue, then talk to the lens. A teleprompter helps more
                 when it sits close to the camera than when you read a document
-                off to the side.
+                off to the side. See{' '}
+                <a href={READ_FROM_SCRIPT_PATH}>
+                  how to read from a script without looking like you’re reading
+                </a>.
               </p>
             </section>
             <section className="faq-item">

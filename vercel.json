@@ -2,6 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     { "source": "/guide", "destination": "/index.html" },
+    { "source": "/guide/how-long-should-a-video-interview-answer-be", "destination": "/index.html" },
+    { "source": "/guide/:slug", "destination": "/index.html" },
     { "source": "/faq", "destination": "/index.html" },
     { "source": "/privacy", "destination": "/index.html" }
   ]

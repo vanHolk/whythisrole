@@ -271,6 +271,17 @@
   margin-top: 8px;
 }
 
+.editorial-prose blockquote {
+  margin: 1.2em 0 0;
+  padding: 2px 0 2px 1em;
+  border-left: 3px solid var(--line);
+}
+
+.editorial-prose blockquote p {
+  margin-top: 0;
+  color: var(--muted);
+}
+
 .editorial-prose a:not(.editorial-cta) {
   color: var(--blue);
 }

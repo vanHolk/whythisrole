@@ -6,6 +6,16 @@ import { CameraRecorder } from './components/CameraRecorder'
 import { CuePickerStep } from './components/CuePickerStep'
 import { FaqPage } from './components/FaqPage'
 import { GuidePage } from './components/GuidePage'
+import { HowLongArticlePage } from './components/guide/HowLongArticlePage'
+import {
+  EmployersLookForArticlePage,
+} from './components/guide/EmployersLookForArticlePage'
+import { ReadFromScriptArticlePage } from './components/guide/ReadFromScriptArticlePage'
+import {
+  EMPLOYERS_LOOK_FOR_PATH,
+  HOW_LONG_GUIDE_PATH,
+  READ_FROM_SCRIPT_PATH,
+} from './components/guide/paths'
 import { PrivacyPage } from './components/PrivacyPage'
 import { JobPasteStep } from './components/JobPasteStep'
 import { formatTimer, type PrompterSpeed } from './lib/constants'
@@ -15,6 +25,15 @@ import type { CueMode, CueSelection, RecordedClip } from './lib/types'
 type Step = 1 | 2 | 3
 
 export default function App() {
+  if (window.location.pathname === HOW_LONG_GUIDE_PATH) {
+    return <HowLongArticlePage />
+  }
+  if (window.location.pathname === EMPLOYERS_LOOK_FOR_PATH) {
+    return <EmployersLookForArticlePage />
+  }
+  if (window.location.pathname === READ_FROM_SCRIPT_PATH) {
+    return <ReadFromScriptArticlePage />
+  }
   if (window.location.pathname === '/guide') {
     return <GuidePage />
   }
