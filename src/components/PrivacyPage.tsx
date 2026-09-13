@@ -47,10 +47,9 @@ export function PrivacyPage() {
               the URL or the fetched page afterward.
             </li>
             <li>
-              Optional support. After you download a take, a Buy Me a Coffee
-              button may appear. That button loads a script from Buy Me a
-              Coffee&apos;s domain. Clicking it opens Buy Me a Coffee, which is
-              governed by their terms and privacy policy (
+              Optional support. After you download a take, a coffee button may
+              appear. Clicking it opens Buy Me a Coffee in a popup. Their site
+              has its own terms and privacy policy (
               <a href="https://buymeacoffee.com/privacy-policy">
                 buymeacoffee.com/privacy-policy
               </a>

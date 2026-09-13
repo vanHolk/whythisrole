@@ -4,6 +4,7 @@ import { AppHeader } from './components/AppHeader'
 import { BottomBar } from './components/BottomBar'
 import { CameraRecorder } from './components/CameraRecorder'
 import { CuePickerStep } from './components/CuePickerStep'
+import { FaqPage } from './components/FaqPage'
 import { GuidePage } from './components/GuidePage'
 import { PrivacyPage } from './components/PrivacyPage'
 import { JobPasteStep } from './components/JobPasteStep'
@@ -16,6 +17,9 @@ type Step = 1 | 2 | 3
 export default function App() {
   if (window.location.pathname === '/guide') {
     return <GuidePage />
+  }
+  if (window.location.pathname === '/faq') {
+    return <FaqPage />
   }
   if (window.location.pathname === '/privacy') {
     return <PrivacyPage />

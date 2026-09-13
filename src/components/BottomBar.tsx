@@ -1,4 +1,4 @@
-import { Check, ChevronLeft, ChevronRight, LoaderCircle } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, Download, LoaderCircle } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { STEP_LABELS } from '../lib/constants'
 
@@ -89,6 +89,12 @@ export function BottomBar({
               />
             ) : null}
             {primarySaved ? <Check size={18} strokeWidth={2} aria-hidden="true" /> : null}
+            {!primarySaved && !primaryBusy && primaryLabel === 'Start recording' ? (
+              <span className="start-rec-dot" aria-hidden="true" />
+            ) : null}
+            {!primarySaved && !primaryBusy && primaryLabel === 'Download' ? (
+              <Download size={16} strokeWidth={2} aria-hidden="true" />
+            ) : null}
             {primaryLabel}
             {!primarySaved && !primaryBusy && PRIMARY_CHEVRON_LABELS.has(primaryLabel) ? (
               <ChevronRight size={18} strokeWidth={2} aria-hidden="true" />

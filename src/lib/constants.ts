@@ -14,18 +14,15 @@ export function formatTimer(ms: number): string {
 export const STEP_LABELS = ['Paste the job', 'Pick and edit', 'Record'] as const
 
 export const PROMPTER_SPEEDS = {
-  slow: { label: 'Slow', wpm: 65, linesPerMinute: 12 },
-  normal: { label: 'Normal', wpm: 100, linesPerMinute: 18 },
-  fast: { label: 'Fast', wpm: 135, linesPerMinute: 24 },
+  slow: { label: 'Slow', wpm: 25, linesPerMinute: 4.5 },
+  normal: { label: 'Normal', wpm: 50, linesPerMinute: 9 },
+  fast: { label: 'Fast', wpm: 100, linesPerMinute: 18 },
 } as const
 
 export type PrompterSpeed = keyof typeof PROMPTER_SPEEDS
 
-export const PREVIEW_WINDOW_MS: Record<PrompterSpeed, number> = {
-  slow: 6500,
-  normal: 4200,
-  fast: 3000,
-}
+/** Same window for every chip so Preview shows pace, not a matched line count. */
+export const PREVIEW_WINDOW_MS = 8400
 
 export const TAKE_TOASTS = [
   'Nice take, that felt natural.',

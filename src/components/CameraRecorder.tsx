@@ -1,5 +1,6 @@
-import { Box, Camera, Cloud, Gauge, Mic } from 'lucide-react'
+import { Camera, Gauge, Mic, RotateCcw, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { SiDropbox, SiGoogledrive } from 'react-icons/si'
 import {
   HARD_CAP_MS,
   PREVIEW_WINDOW_MS,
@@ -66,8 +67,8 @@ export function CameraRecorder({
   )
   const [error, setError] = useState<string | null>(null)
   const [elapsedMs, setElapsedMs] = useState(0)
-  const [previewElapsedMs, setPreviewElapsedMs] = useState(0)
   const [previewing, setPreviewing] = useState(false)
+  const [cueSession, setCueSession] = useState(0)
   const [countdown, setCountdown] = useState(3)
   const [cameraName, setCameraName] = useState('Camera')
   const [micName, setMicName] = useState('Microphone')
@@ -84,7 +85,7 @@ export function CameraRecorder({
     void enableCamera(!clip)
     return () => {
       window.clearInterval(tickRef.current)
-      window.clearInterval(previewTickRef.current)
+      window.clearTimeout(previewTickRef.current)
       window.clearInterval(countdownRef.current)
       recorderRef.current?.state === 'recording' && recorderRef.current.stop()
       streamRef.current?.getTracks().forEach((track) => track.stop())
@@ -184,28 +185,18 @@ export function CameraRecorder({
   }
 
   function stopPreview() {
-    window.clearInterval(previewTickRef.current)
+    window.clearTimeout(previewTickRef.current)
     setPreviewing(false)
-    setPreviewElapsedMs(0)
   }
 
   function startPreview() {
     if (cueMode !== 'script' || phase !== 'ready') return
-    window.clearInterval(previewTickRef.current)
-    const started = Date.now()
-    const demoMs = PREVIEW_WINDOW_MS[speed]
+    window.clearTimeout(previewTickRef.current)
+    setCueSession((value) => value + 1)
     setPreviewing(true)
-    setPreviewElapsedMs(0)
-    previewTickRef.current = window.setInterval(() => {
-      const elapsed = Date.now() - started
-      if (elapsed >= demoMs) {
-        window.clearInterval(previewTickRef.current)
-        setPreviewing(false)
-        setPreviewElapsedMs(0)
-        return
-      }
-      setPreviewElapsedMs(elapsed)
-    }, 50)
+    previewTickRef.current = window.setTimeout(() => {
+      setPreviewing(false)
+    }, PREVIEW_WINDOW_MS)
   }
 
   function stopTicker() {
@@ -285,6 +276,7 @@ export function CameraRecorder({
     startedAtRef.current = Date.now()
     elapsedRef.current = 0
     setElapsedMs(0)
+    setCueSession((value) => value + 1)
     setPhase('recording')
 
     try {
@@ -400,7 +392,6 @@ export function CameraRecorder({
   const showCue = phase === 'ready' || phase === 'countdown' || phase === 'recording'
   const cueScrolling =
     cueMode === 'script' && (phase === 'recording' || (phase === 'ready' && previewing))
-  const cueElapsed = phase === 'recording' ? elapsedMs : previewElapsedMs
 
   return (
     <div className="record-shell">
@@ -421,10 +412,10 @@ export function CameraRecorder({
 
         {showCue ? (
           <CueDisplay
+            key={cueSession}
             text={cueText}
             mode={cueMode}
             isScrolling={cueScrolling}
-            elapsedMs={cueElapsed}
             speed={speed}
             loop={false}
           />
@@ -488,9 +479,11 @@ export function CameraRecorder({
                   className={speed === key ? 'speed-chip is-active' : 'speed-chip'}
                   onClick={() => {
                     stopPreview()
+                    setCueSession((value) => value + 1)
                     onSpeedChange(key)
                   }}
                 >
+                  <SpeedBars speed={key} />
                   {PROMPTER_SPEEDS[key].label}
                 </button>
               ))}
@@ -511,9 +504,11 @@ export function CameraRecorder({
       {phase === 'review' ? (
         <div className="review-actions">
           <button type="button" className="btn-secondary" onClick={handleRetake}>
+            <RotateCcw size={16} strokeWidth={2} aria-hidden="true" />
             Retake
           </button>
-          <button type="button" className="btn-secondary" onClick={handleDelete}>
+          <button type="button" className="btn-secondary btn-delete" onClick={handleDelete}>
+            <Trash2 size={16} strokeWidth={2} aria-hidden="true" />
             Delete
           </button>
         </div>
@@ -539,7 +534,7 @@ export function CameraRecorder({
                 rel="noopener noreferrer"
                 aria-label="Open Google Drive"
               >
-                <Cloud size={16} strokeWidth={2} aria-hidden="true" />
+                <SiGoogledrive size={16} aria-hidden="true" />
               </a>
               <a
                 className="share-card-btn"
@@ -548,15 +543,10 @@ export function CameraRecorder({
                 rel="noopener noreferrer"
                 aria-label="Open Dropbox"
               >
-                <Box size={16} strokeWidth={2} aria-hidden="true" />
+                <SiDropbox size={16} aria-hidden="true" />
               </a>
             </div>
           </div>
-          {saved ? (
-            <div className="tip-card">
-              <BuyMeACoffeeButton />
-            </div>
-          ) : null}
           {saved && onStartOver ? (
             <button type="button" className="btn-secondary btn-start-over" onClick={onStartOver}>
               Start over
@@ -584,7 +574,25 @@ export function CameraRecorder({
         primaryBusy={phase === 'download' && preparingDownload}
         onPrimary={handlePrimary}
       />
+
+      <BuyMeACoffeeButton downloadCount={downloadCount} saved={saved} />
     </div>
+  )
+}
+
+const SPEED_BAR_COUNT: Record<PrompterSpeed, number> = {
+  slow: 1,
+  normal: 2,
+  fast: 3,
+}
+
+function SpeedBars({ speed }: { speed: PrompterSpeed }) {
+  return (
+    <span className="speed-bars" aria-hidden="true">
+      {Array.from({ length: SPEED_BAR_COUNT[speed] }, (_, index) => (
+        <i key={index} />
+      ))}
+    </span>
   )
 }
 

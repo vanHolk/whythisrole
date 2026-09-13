@@ -1,59 +1,78 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
-const BMC_SRC = 'https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js'
+const BMC_URL = 'https://www.buymeacoffee.com/van_ho'
+const AUTO_OPEN_MS = 1300
 
-function removeBmcArtifacts(container: HTMLElement | null, script?: HTMLScriptElement) {
-  script?.remove()
-  container?.replaceChildren()
-  document.querySelectorAll('a.bmc-btn, .bmc-btn-container').forEach((node) => node.remove())
-  document.querySelectorAll(`script[src="${BMC_SRC}"]`).forEach((node) => node.remove())
+type BuyMeACoffeeButtonProps = {
+  downloadCount: number
+  saved: boolean
 }
 
-export function BuyMeACoffeeButton() {
-  const containerRef = useRef<HTMLDivElement>(null)
+export function BuyMeACoffeeButton({ downloadCount, saved }: BuyMeACoffeeButtonProps) {
+  const [open, setOpen] = useState(false)
+  const titleId = useId()
+  const lastOfferedCountRef = useRef(downloadCount)
+
+  const close = useCallback(() => setOpen(false), [])
 
   useEffect(() => {
-    const container = containerRef.current
-    if (!container) return
-
-    let cancelled = false
-    const originalWriteln = document.writeln.bind(document)
-    // The official widget calls document.writeln. After load that replaces
-    // the whole page, so capture the markup into this container instead.
-    document.writeln = (...data: string[]) => {
-      container.insertAdjacentHTML('beforeend', data.join(''))
+    if (!saved) {
+      setOpen(false)
+      return
     }
+    if (downloadCount === lastOfferedCountRef.current) return
+    lastOfferedCountRef.current = downloadCount
+    if (downloadCount < 1) return
+    const timeout = window.setTimeout(() => setOpen(true), AUTO_OPEN_MS)
+    return () => window.clearTimeout(timeout)
+  }, [downloadCount, saved])
 
-    const script = document.createElement('script')
-    script.type = 'text/javascript'
-    script.src = BMC_SRC
-    script.setAttribute('data-name', 'bmc-button')
-    script.setAttribute('data-slug', 'van_ho')
-    script.setAttribute('data-color', '#FFDD00')
-    script.setAttribute('data-emoji', '☕')
-    script.setAttribute('data-font', 'Inter')
-    script.setAttribute('data-text', 'Buy me a coffee')
-    script.setAttribute('data-outline-color', '#000000')
-    script.setAttribute('data-font-color', '#000000')
-    script.setAttribute('data-coffee-color', '#ffffff')
-
-    const restoreWriteln = () => {
-      document.writeln = originalWriteln
+  useEffect(() => {
+    if (!open) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') close()
     }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [open, close])
 
-    script.addEventListener('load', () => {
-      restoreWriteln()
-      if (cancelled) removeBmcArtifacts(container, script)
-    })
-    script.addEventListener('error', restoreWriteln)
-    container.appendChild(script)
+  function handlePrimary() {
+    window.open(BMC_URL, 'bmc', 'width=480,height=680')
+    close()
+  }
 
-    return () => {
-      cancelled = true
-      restoreWriteln()
-      removeBmcArtifacts(container, script)
-    }
-  }, [])
+  if (!open) return null
 
-  return <div ref={containerRef} className="bmc-mount" />
+  return createPortal(
+    <div
+      className="coffee-modal-overlay"
+      onClick={close}
+      role="presentation"
+    >
+      <div
+        className="coffee-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <h2 id={titleId}>Enjoying whythisrole?</h2>
+        <p>
+          This is a free, one-person project. If it saved you some stress
+          before your interview, a coffee goes a long way. Good luck with
+          the role, hope you get it.
+        </p>
+        <div className="coffee-modal-actions">
+          <button type="button" className="btn-primary" onClick={handlePrimary}>
+            Buy me a coffee ☕
+          </button>
+          <button type="button" className="coffee-modal-later" onClick={close}>
+            Maybe later
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  )
 }
