@@ -35,6 +35,26 @@ export function GuidePage() {
             Privacy & Terms.
           </a>
         </p>
+        <p>
+          Made by Van Ho ·{' '}
+          <a
+            className="footer-link"
+            href="https://www.vanholker.com"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Portfolio
+          </a>
+          {' · '}
+          <a
+            className="footer-link"
+            href="https://www.linkedin.com/in/michael-holker-ba3b507b/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            LinkedIn
+          </a>
+        </p>
       </footer>
     </div>
   )

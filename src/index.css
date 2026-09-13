@@ -8,8 +8,6 @@
   --bg: #f3f2ef;
   --card: #ffffff;
   --danger: #cc1016;
-  --paid: #915907;
-  --paid-bg: #fcf0d6;
   --shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06),
     0 8px 24px rgba(0, 0, 0, 0.06);
   --disabled: #d4d4d4;
@@ -344,6 +342,25 @@ input[type='text']:focus-visible {
   font-weight: 500;
 }
 
+.form-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: #fdeeee;
+  color: var(--danger);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.form-warning svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
 .btn-text {
   border: 0;
   background: transparent;
@@ -524,9 +541,21 @@ a.btn-primary {
   min-width: 88px;
 }
 
+.btn-fetch.is-idle {
+  background: transparent;
+  color: var(--muted);
+  font-weight: 500;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.btn-fetch-spinner,
+.btn-spinner {
+  flex-shrink: 0;
+  animation: fetch-spin 0.7s linear infinite;
+}
+
 .btn-fetch-spinner {
   color: var(--blue);
-  animation: fetch-spin 0.7s linear infinite;
 }
 
 @keyframes fetch-spin {
@@ -933,19 +962,6 @@ a.btn-primary {
   box-shadow: 0 0 0 4px rgba(255, 77, 79, 0.25);
 }
 
-.paid-pill {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: var(--paid-bg);
-  color: var(--paid);
-  font-size: 12px;
-  font-weight: 600;
-  opacity: 0.95;
-}
-
 .recorder-controls {
   display: flex;
   flex-wrap: wrap;
@@ -978,8 +994,13 @@ a.btn-primary {
   gap: 6px;
 }
 
+.btn-start-over {
+  align-self: flex-start;
+}
+
 .result-bar,
-.share-card {
+.share-card,
+.tip-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1040,6 +1061,18 @@ a.btn-primary {
   background: var(--bg);
   color: var(--text);
   border-color: var(--muted);
+}
+
+.tip-card {
+  justify-content: center;
+  padding: 12px 14px;
+}
+
+.bmc-mount {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
 }
 
 .guide-card h1 {
@@ -1107,57 +1140,6 @@ a.btn-primary {
 .footer-link {
   color: inherit;
   text-underline-offset: 2px;
-}
-
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
-
-.modal-card {
-  width: min(440px, 100%);
-  background: var(--card);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 20px 20px 24px;
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.modal-header h2 {
-  font-size: 20px;
-}
-
-.icon-button {
-  border: 0;
-  background: transparent;
-  font-size: 28px;
-  line-height: 1;
-  color: var(--muted);
-  padding: 0 4px;
-}
-
-.payment-slot {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.payment-slot-note {
-  color: var(--muted);
-  font-size: 14px;
 }
 
 @media (max-width: 760px) {

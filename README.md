@@ -21,8 +21,8 @@ This repo pins Vite 6 so it runs on Node 22.11. Camera and microphone permission
 ## Environment
 
 Copy `.env.example` to `.env` when you wire real APIs. Keys stay on the server
-(`GROQ_API_KEY`, `STRIPE_SECRET_KEY`, `UPSTASH_REDIS_REST_URL`,
-`UPSTASH_REDIS_REST_TOKEN`). Do not prefix those with `VITE_`.
+(`GROQ_API_KEY`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`).
+Do not prefix those with `VITE_`.
 
 `npm run dev` defaults `USE_MOCK_GENERATE=true` so generate uses static
 placeholder copy. Set `USE_MOCK_GENERATE=false` and `GROQ_API_KEY` to
@@ -30,8 +30,8 @@ call Groq locally. Production should leave mock off and set Upstash for
 per-IP rate limits (5/min). Without Upstash, the real path uses a process-local
 in-memory limiter only.
 
-Payments are still stubbed. `npm run dev` serves `/api` through a local Vite
-plugin so the full loop works without Vercel.
+`npm run dev` serves `/api` through a local Vite plugin so the full loop
+works without Vercel.
 
 ## Deploy
 

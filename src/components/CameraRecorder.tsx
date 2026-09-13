@@ -1,10 +1,8 @@
 import { Box, Camera, Cloud, Gauge, Mic } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import {
-  FREE_LIMIT_MS,
   HARD_CAP_MS,
   PREVIEW_WINDOW_MS,
-  PRICE_LABEL,
   PROMPTER_SPEEDS,
   formatTimer,
   pickSaveToast,
@@ -15,6 +13,7 @@ import { pickRecorderFormat } from '../lib/recording'
 import type { CueMode, RecordedClip } from '../lib/types'
 import { AudioMeter } from './AudioMeter'
 import { BottomBar } from './BottomBar'
+import { BuyMeACoffeeButton } from './BuyMeACoffeeButton'
 import { CueDisplay } from './CueDisplay'
 
 type Phase = 'need-permission' | 'ready' | 'countdown' | 'recording' | 'review' | 'download'
@@ -24,13 +23,14 @@ type CameraRecorderProps = {
   cueMode: CueMode
   clip: RecordedClip | null
   resultCopy: string | null
-  gated: boolean
   speed: PrompterSpeed
   onSpeedChange: (speed: PrompterSpeed) => void
   onClipChange: (clip: RecordedClip | null) => void
   onDownload: () => void
   downloadCount: number
   preparingDownload?: boolean
+  downloadProgress?: number | null
+  onStartOver?: () => void
   onBack: () => void
 }
 
@@ -39,13 +39,14 @@ export function CameraRecorder({
   cueMode,
   clip,
   resultCopy,
-  gated,
   speed,
   onSpeedChange,
   onClipChange,
   onDownload,
   downloadCount,
   preparingDownload = false,
+  downloadProgress = null,
+  onStartOver,
   onBack,
 }: CameraRecorderProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -76,7 +77,6 @@ export function CameraRecorder({
   const [streamVersion, setStreamVersion] = useState(0)
   const lastDownloadCountRef = useRef(downloadCount)
 
-  const inPaidZone = phase === 'recording' && elapsedMs >= FREE_LIMIT_MS
   const liveStream = streamRef.current
   const isLivePreview = permissionState === 'live' && (phase === 'ready' || phase === 'countdown' || phase === 'recording')
 
@@ -395,7 +395,7 @@ export function CameraRecorder({
             ? { label: 'Stop', disabled: false, danger: true }
             : phase === 'review'
               ? { label: 'Continue', disabled: false, danger: false }
-              : { label: gated ? `Download · ${PRICE_LABEL}` : 'Download', disabled: !clip, danger: false }
+              : { label: 'Download', disabled: !clip, danger: false }
 
   const showCue = phase === 'ready' || phase === 'countdown' || phase === 'recording'
   const cueScrolling =
@@ -435,12 +435,6 @@ export function CameraRecorder({
             <span className="rec-dot" />
             {formatTimer(elapsedMs)}
             <span className="rec-cap"> / 1:30</span>
-          </div>
-        ) : null}
-
-        {inPaidZone ? (
-          <div className="paid-pill" role="status">
-            Paid zone · download {PRICE_LABEL}
           </div>
         ) : null}
 
@@ -558,6 +552,16 @@ export function CameraRecorder({
               </a>
             </div>
           </div>
+          {saved ? (
+            <div className="tip-card">
+              <BuyMeACoffeeButton />
+            </div>
+          ) : null}
+          {saved && onStartOver ? (
+            <button type="button" className="btn-secondary btn-start-over" onClick={onStartOver}>
+              Start over
+            </button>
+          ) : null}
         </div>
       ) : null}
 
@@ -567,7 +571,9 @@ export function CameraRecorder({
         backDisabled={phase === 'countdown' || phase === 'recording' || preparingDownload}
         primaryLabel={
           phase === 'download' && preparingDownload
-            ? 'Preparing…'
+            ? downloadProgress != null
+              ? `Preparing… ${downloadProgress}%`
+              : 'Preparing…'
             : phase === 'download' && saved
               ? 'Saved'
               : primary.label
@@ -575,6 +581,7 @@ export function CameraRecorder({
         primaryDisabled={primary.disabled || preparingDownload}
         primaryDanger={primary.danger}
         primarySaved={phase === 'download' && saved}
+        primaryBusy={phase === 'download' && preparingDownload}
         onPrimary={handlePrimary}
       />
     </div>

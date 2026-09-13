@@ -39,9 +39,15 @@ export function downloadBlob(blob: Blob, filename: string): void {
 /** Short product URL burned into the downloaded file only. */
 export const DOWNLOAD_WATERMARK_TEXT = 'whythisrole.com'
 
+export type BakeDownloadOptions = {
+  durationMs?: number
+  extension: string
+  onProgress?: (percent: number) => void
+}
+
 export async function bakeDownloadWatermark(
   blob: Blob,
-  options: { durationMs?: number; extension: string },
+  options: BakeDownloadOptions,
 ): Promise<{ blob: Blob; extension: string }> {
   try {
     return await composeWatermarkedBlob(blob, options)
@@ -111,9 +117,25 @@ function createCompositorRecorder(stream: MediaStream, mimeType: string): MediaR
   throw lastError instanceof Error ? lastError : new Error('MediaRecorder failed')
 }
 
+function reportBakeProgress(
+  video: HTMLVideoElement,
+  options: BakeDownloadOptions,
+) {
+  if (!options.onProgress) return
+  const durationSec =
+    Number.isFinite(video.duration) && video.duration > 0
+      ? video.duration
+      : options.durationMs && options.durationMs > 0
+        ? options.durationMs / 1000
+        : 0
+  if (durationSec <= 0) return
+  const percent = Math.max(0, Math.min(99, Math.round((video.currentTime / durationSec) * 100)))
+  options.onProgress(percent)
+}
+
 async function composeWatermarkedBlob(
   blob: Blob,
-  options: { durationMs?: number; extension: string },
+  options: BakeDownloadOptions,
 ): Promise<{ blob: Blob; extension: string }> {
   if (typeof MediaRecorder === 'undefined' || typeof document === 'undefined') {
     throw new Error('compositor unavailable')
@@ -187,6 +209,7 @@ async function composeWatermarkedBlob(
     const paint = () => {
       ctx.drawImage(video, 0, 0, width, height)
       drawWatermark(ctx, width, height)
+      reportBakeProgress(video, options)
     }
     paint()
 

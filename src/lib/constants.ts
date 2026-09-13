@@ -1,14 +1,5 @@
-export const FREE_LIMIT_MS = 45_000
 export const HARD_CAP_MS = 90_000
-export const PRICE_USD = 0.99
-export const PRICE_LABEL = '$0.99'
-
-export const FREE_LIMIT_SECONDS = FREE_LIMIT_MS / 1000
 export const HARD_CAP_SECONDS = HARD_CAP_MS / 1000
-
-export function requiresPayment(durationMs: number): boolean {
-  return durationMs >= FREE_LIMIT_MS
-}
 
 export function formatTimer(ms: number): string {
   const totalSeconds = Math.min(
@@ -23,17 +14,17 @@ export function formatTimer(ms: number): string {
 export const STEP_LABELS = ['Paste the job', 'Pick and edit', 'Record'] as const
 
 export const PROMPTER_SPEEDS = {
-  slow: { label: 'Slow', wpm: 90, linesPerMinute: 16 },
-  normal: { label: 'Normal', wpm: 140, linesPerMinute: 30 },
-  fast: { label: 'Fast', wpm: 230, linesPerMinute: 54 },
+  slow: { label: 'Slow', wpm: 65, linesPerMinute: 12 },
+  normal: { label: 'Normal', wpm: 100, linesPerMinute: 18 },
+  fast: { label: 'Fast', wpm: 135, linesPerMinute: 24 },
 } as const
 
 export type PrompterSpeed = keyof typeof PROMPTER_SPEEDS
 
 export const PREVIEW_WINDOW_MS: Record<PrompterSpeed, number> = {
-  slow: 4500,
-  normal: 3200,
-  fast: 2000,
+  slow: 6500,
+  normal: 4200,
+  fast: 3000,
 }
 
 export const TAKE_TOASTS = [

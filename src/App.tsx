@@ -1,5 +1,5 @@
 import { Lock } from 'lucide-react'
-import { useMemo, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { AppHeader } from './components/AppHeader'
 import { BottomBar } from './components/BottomBar'
 import { CameraRecorder } from './components/CameraRecorder'
@@ -7,13 +7,7 @@ import { CuePickerStep } from './components/CuePickerStep'
 import { GuidePage } from './components/GuidePage'
 import { PrivacyPage } from './components/PrivacyPage'
 import { JobPasteStep } from './components/JobPasteStep'
-import { PaywallModal } from './components/PaywallModal'
-import {
-  PRICE_LABEL,
-  formatTimer,
-  requiresPayment,
-  type PrompterSpeed,
-} from './lib/constants'
+import { formatTimer, type PrompterSpeed } from './lib/constants'
 import { bakeDownloadWatermark, clipFilename, downloadBlob } from './lib/recording'
 import type { CueMode, CueSelection, RecordedClip } from './lib/types'
 
@@ -40,29 +34,17 @@ function Funnel() {
   const [clip, setClip] = useState<RecordedClip | null>(null)
   const [prompterSpeed, setPrompterSpeed] = useState<PrompterSpeed>('normal')
   const clipUrlRef = useRef<string | null>(null)
-  const [unlocked, setUnlocked] = useState(false)
-  const [paywallOpen, setPaywallOpen] = useState(false)
   const [downloadCount, setDownloadCount] = useState(0)
   const [preparingDownload, setPreparingDownload] = useState(false)
+  const [downloadProgress, setDownloadProgress] = useState<number | null>(null)
   const preparingRef = useRef(false)
   const bakedRef = useRef<{ source: Blob; result: { blob: Blob; extension: string } } | null>(
     null,
   )
 
-  const gated = clip ? requiresPayment(clip.durationMs) && !unlocked : false
   const canGoToStep2 = hasGenerated
   const canGoToStep3 = Boolean(selection)
-
-  const resultCopy = useMemo(() => {
-    if (!clip) return null
-    if (!requiresPayment(clip.durationMs)) {
-      return `This take is ${formatTimer(clip.durationMs)}. It is under 45 seconds, so download is free.`
-    }
-    if (unlocked) {
-      return `This take is ${formatTimer(clip.durationMs)}. Payment confirmed in this session, so download is unlocked.`
-    }
-    return `This take is ${formatTimer(clip.durationMs)}. Download is ${PRICE_LABEL} because it is 45 seconds or longer.`
-  }, [clip, unlocked])
+  const resultCopy = clip ? `This take is ${formatTimer(clip.durationMs)}.` : null
 
   function handleGenerated(output: { bullets: string; script: string }) {
     setBullets(output.bullets)
@@ -85,14 +67,13 @@ function Funnel() {
     clipUrlRef.current = next?.objectUrl ?? null
     bakedRef.current = null
     setClip(next)
-    setUnlocked(false)
-    setPaywallOpen(false)
   }
 
   async function saveClip() {
     if (!clip || preparingRef.current) return
     preparingRef.current = true
     setPreparingDownload(true)
+    setDownloadProgress(null)
     try {
       const cached = bakedRef.current?.source === clip.blob ? bakedRef.current.result : null
       const result =
@@ -100,6 +81,9 @@ function Funnel() {
         (await bakeDownloadWatermark(clip.blob, {
           durationMs: clip.durationMs,
           extension: clip.extension,
+          onProgress: (percent) => {
+            setDownloadProgress((current) => (current === percent ? current : percent))
+          },
         }))
       if (result.blob !== clip.blob) {
         bakedRef.current = { source: clip.blob, result }
@@ -109,15 +93,19 @@ function Funnel() {
     } finally {
       preparingRef.current = false
       setPreparingDownload(false)
+      setDownloadProgress(null)
     }
+  }
+
+  function handleStartOver() {
+    handleClipChange(null)
+    setDownloadCount(0)
+    setDownloadProgress(null)
+    setStep(1)
   }
 
   function handleDownload() {
     if (!clip || preparingRef.current) return
-    if (requiresPayment(clip.durationMs) && !unlocked) {
-      setPaywallOpen(true)
-      return
-    }
     void saveClip()
   }
 
@@ -148,8 +136,7 @@ function Funnel() {
             <div className="hero-copy">
               <h1 className="display">A short recording, with a script running right over the camera.</h1>
               <p>
-                For candidates who've already been asked to submit a video.
-                The file stays on this device, it's never uploaded.
+                Paste the job post and get a script or bullet points to read from. It stays on your device, never uploaded.
               </p>
             </div>
           </section>
@@ -171,6 +158,26 @@ function Funnel() {
               Not affiliated with LinkedIn.{' '}
               <a className="footer-link" href="/privacy">
                 Privacy & Terms.
+              </a>
+            </p>
+            <p>
+              Made by Van Ho ·{' '}
+              <a
+                className="footer-link"
+                href="https://www.vanholker.com"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Portfolio
+              </a>
+              {' · '}
+              <a
+                className="footer-link"
+                href="https://www.linkedin.com/in/michael-holker-ba3b507b/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                LinkedIn
               </a>
             </p>
           </footer>
@@ -209,6 +216,26 @@ function Funnel() {
                 Privacy & Terms.
               </a>
             </p>
+            <p>
+              Made by Van Ho ·{' '}
+              <a
+                className="footer-link"
+                href="https://www.vanholker.com"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Portfolio
+              </a>
+              {' · '}
+              <a
+                className="footer-link"
+                href="https://www.linkedin.com/in/michael-holker-ba3b507b/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                LinkedIn
+              </a>
+            </p>
           </footer>
         </main>
       ) : null}
@@ -219,13 +246,14 @@ function Funnel() {
           cueMode={selection.mode}
           clip={clip}
           resultCopy={resultCopy}
-          gated={gated}
           speed={prompterSpeed}
           onSpeedChange={setPrompterSpeed}
           onClipChange={handleClipChange}
           onDownload={handleDownload}
           downloadCount={downloadCount}
           preparingDownload={preparingDownload}
+          downloadProgress={downloadProgress}
+          onStartOver={handleStartOver}
           onBack={goBack}
         />
       ) : null}
@@ -240,16 +268,6 @@ function Funnel() {
           onPrimary={goNext}
         />
       ) : null}
-
-      <PaywallModal
-        open={paywallOpen}
-        onClose={() => setPaywallOpen(false)}
-        onUnlocked={() => {
-          setUnlocked(true)
-          setPaywallOpen(false)
-          void saveClip()
-        }}
-      />
     </div>
   )
 }

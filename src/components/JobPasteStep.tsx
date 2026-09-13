@@ -1,5 +1,5 @@
-import { Building2, FileText, Link as LinkIcon, LoaderCircle } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { AlertCircle, Building2, FileText, Link as LinkIcon, LoaderCircle } from 'lucide-react'
+import { useRef, useState, type FormEvent } from 'react'
 import {
   GENERATE_MAX_CHARS,
   GENERATE_MIN_CHARS,
@@ -10,6 +10,15 @@ import {
 
 const FETCH_FAIL = "Couldn't pull text automatically, paste it in above"
 const FETCH_RATE_LIMIT = 'Too many requests, try again in a minute'
+
+function isHttpUrl(raw: string): boolean {
+  try {
+    const parsed = new URL(raw.trim())
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
 
 type JobPasteStepProps = {
   jobDescription: string
@@ -37,9 +46,19 @@ export function JobPasteStep({
   const [generating, setGenerating] = useState(false)
   const [fetchNotice, setFetchNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const jobDescriptionRef = useRef<HTMLTextAreaElement>(null)
+
+  function showFetchFallback(message: string) {
+    setFetchNotice(message)
+    jobDescriptionRef.current?.focus()
+  }
 
   async function handleFetch() {
     setFetchNotice(null)
+    if (!isHttpUrl(jobUrl)) {
+      showFetchFallback(FETCH_FAIL)
+      return
+    }
     setError(null)
     setFetching(true)
     try {
@@ -50,16 +69,16 @@ export function JobPasteStep({
       })
       const payload = (await response.json()) as FetchJobResponse
       if (response.status === 429) {
-        setFetchNotice(payload.error ?? FETCH_RATE_LIMIT)
+        showFetchFallback(payload.error ?? FETCH_RATE_LIMIT)
         return
       }
       if (!payload.ok || !payload.text?.trim()) {
-        setFetchNotice(FETCH_FAIL)
+        showFetchFallback(FETCH_FAIL)
         return
       }
       onJobDescriptionChange(payload.text.trim())
     } catch {
-      setFetchNotice(FETCH_FAIL)
+      showFetchFallback(FETCH_FAIL)
     } finally {
       setFetching(false)
     }
@@ -109,17 +128,22 @@ export function JobPasteStep({
         the path that always works. Nothing is saved.
       </p>
 
-      <form className="stack" onSubmit={handleGenerate}>
+      <form className="stack" onSubmit={handleGenerate} noValidate>
         <label className="field">
           <span className="field-label">
             <FileText size={18} strokeWidth={2} aria-hidden="true" />
             Job description
           </span>
           <textarea
+            ref={jobDescriptionRef}
             required
             rows={8}
             value={jobDescription}
-            onChange={(event) => onJobDescriptionChange(event.target.value)}
+            onChange={(event) => {
+              setFetchNotice(null)
+              setError(null)
+              onJobDescriptionChange(event.target.value)
+            }}
             placeholder="Paste the job description or the question they asked you to answer on video…"
           />
         </label>
@@ -132,15 +156,26 @@ export function JobPasteStep({
             <div className="input-with-icon">
               <LinkIcon size={18} strokeWidth={2} aria-hidden="true" />
               <input
-                type="url"
+                type="text"
+                inputMode="url"
+                autoComplete="url"
+                spellCheck={false}
                 value={jobUrl}
-                onChange={(event) => setJobUrl(event.target.value)}
+                onChange={(event) => {
+                  setFetchNotice(null)
+                  setError(null)
+                  setJobUrl(event.target.value)
+                }}
                 placeholder="https://…"
               />
             </div>
             <button
               type="button"
-              className="btn-secondary btn-fetch"
+              className={
+                jobUrl.trim()
+                  ? 'btn-secondary btn-fetch'
+                  : 'btn-secondary btn-fetch is-idle'
+              }
               onClick={handleFetch}
               disabled={fetching || !jobUrl.trim()}
               aria-busy={fetching}
@@ -161,7 +196,12 @@ export function JobPasteStep({
             </button>
           </div>
         </label>
-        {fetchNotice ? <p className="form-soft">{fetchNotice}</p> : null}
+        {fetchNotice ? (
+          <p className="form-warning" role="alert">
+            <AlertCircle size={18} strokeWidth={2} aria-hidden="true" />
+            {fetchNotice}
+          </p>
+        ) : null}
 
         <label className="field">
           <span className="field-label">
@@ -171,7 +211,10 @@ export function JobPasteStep({
           <textarea
             rows={3}
             value={companyBlurb}
-            onChange={(event) => onCompanyBlurbChange(event.target.value)}
+            onChange={(event) => {
+              setError(null)
+              onCompanyBlurbChange(event.target.value)
+            }}
             placeholder="A sentence or two about the company, if you have it."
           />
         </label>

@@ -75,11 +75,6 @@ export function localApiPlugin(): Plugin {
             await pipeToNode(handler, req, res, url)
             return
           }
-          if (url === '/api/create-payment') {
-            const { default: handler } = await import('./api/create-payment')
-            await pipeToNode(handler, req, res, url)
-            return
-          }
           if (url === '/api/fetch-job') {
             const { default: handler } = await import('./api/fetch-job')
             await pipeToNode(handler, req, res, url)

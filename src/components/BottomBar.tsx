@@ -1,4 +1,4 @@
-import { Check, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, LoaderCircle } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { STEP_LABELS } from '../lib/constants'
 
@@ -13,6 +13,7 @@ type BottomBarProps = {
   primaryDisabled?: boolean
   primaryDanger?: boolean
   primarySaved?: boolean
+  primaryBusy?: boolean
   onPrimary: () => void
   belowPrimary?: ReactNode
 }
@@ -26,6 +27,7 @@ export function BottomBar({
   primaryDisabled = false,
   primaryDanger = false,
   primarySaved = false,
+  primaryBusy = false,
   onPrimary,
   belowPrimary,
 }: BottomBarProps) {
@@ -76,10 +78,19 @@ export function BottomBar({
             className={primaryClass}
             onClick={onPrimary}
             disabled={primaryDisabled}
+            aria-busy={primaryBusy}
           >
+            {primaryBusy ? (
+              <LoaderCircle
+                className="btn-spinner"
+                size={18}
+                strokeWidth={2}
+                aria-hidden="true"
+              />
+            ) : null}
             {primarySaved ? <Check size={18} strokeWidth={2} aria-hidden="true" /> : null}
             {primaryLabel}
-            {!primarySaved && PRIMARY_CHEVRON_LABELS.has(primaryLabel) ? (
+            {!primarySaved && !primaryBusy && PRIMARY_CHEVRON_LABELS.has(primaryLabel) ? (
               <ChevronRight size={18} strokeWidth={2} aria-hidden="true" />
             ) : null}
           </button>

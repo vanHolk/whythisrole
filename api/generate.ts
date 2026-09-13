@@ -1,4 +1,4 @@
-import { enforceRateLimit } from './rate-limit'
+import { enforceRateLimit, TOO_MANY_REQUESTS } from './rate-limit'
 import { validateGenerateInput } from '../src/lib/generate-input'
 import type { GenerateResponse } from '../src/lib/types'
 
@@ -6,8 +6,22 @@ export const config = { runtime: 'edge' }
 
 const GROQ_CHAT_URL = 'https://api.groq.com/openai/v1/chat/completions'
 const MODEL = 'openai/gpt-oss-20b'
-const MAX_COMPLETION_TOKENS = 500
-const GROQ_TIMEOUT_MS = 20_000
+// gpt-oss spends completion tokens on reasoning first. 500 often leaves
+// empty content (finish_reason=length) and the UI shows a generic 502.
+const MAX_COMPLETION_TOKENS = 4096
+const GROQ_TIMEOUT_MS = 25_000
+const GENERIC_GENERATE_ERROR = 'Could not generate talking points. Try again in a moment.'
+const GENERATE_NOT_CONFIGURED = 'Generate is not configured. Try again in a moment.'
+const NETWORK_BLOCKED_ERROR =
+  'This network blocked the request. If you are on a VPN, try turning it off and generate again.'
+
+class GenerateHttpError extends Error {
+  status: number
+  constructor(message: string, status: number) {
+    super(message)
+    this.status = status
+  }
+}
 
 // Van: set a hard spend/budget alert on this API key in the Groq Console.
 // That is the backstop if code-side limits fail — independent of this handler.
@@ -21,10 +35,19 @@ const SYSTEM_PROMPT = [
   'You help a job candidate record a 45–90 second first-person video answer.',
   'Use the job description and optional company blurb as context only.',
   'Do not quote, dump, or paraphrase the posting at length.',
-  'Write concise first-person talking points and a short spoken script.',
-  'Return a JSON object with keys "key_points" and "script".',
-  'key_points: 4–6 short first-person talking points as an array of strings.',
-  'script: something they can say aloud in about 45–90 seconds. Natural, first person, no lists.',
+  'Respond with one JSON object only. Both keys are required. Never omit script.',
+  'Put script first so it is never dropped:',
+  '{"script":"A single string of spoken first-person sentences they can say aloud in 45-90 seconds. Natural speech, no lists, no bullets.","key_points":["short first-person talking point","another talking point"]}',
+  'script MUST be one string of spoken sentences, never an array, never empty, never omitted.',
+  'key_points MUST be an array of 4-6 short first-person strings.',
+  'Do not wrap the object, do not add other keys, do not return key_points without script.',
+].join(' ')
+
+const RETRY_SYSTEM_PROMPT = [
+  'Return ONLY this JSON shape. Both keys are required.',
+  '{"script":"Four to eight spoken first-person sentences as one string.","key_points":["point 1","point 2","point 3","point 4"]}',
+  'script is a required string of spoken sentences. Never omit it. Never use an array for script.',
+  'If you only have talking points, still write script as those points spoken aloud in sentences.',
 ].join(' ')
 
 export function mockGenerate(_jobDescription: string, _companyBlurb: string) {
@@ -51,14 +74,75 @@ function useMockGenerate(): boolean {
   return process.env.USE_MOCK_GENERATE === 'true'
 }
 
+function asTextContent(content: unknown): string {
+  if (typeof content === 'string') return content
+  if (!Array.isArray(content)) return ''
+  return content
+    .map((part) => {
+      if (typeof part === 'string') return part
+      if (part && typeof part === 'object' && typeof (part as { text?: unknown }).text === 'string') {
+        return (part as { text: string }).text
+      }
+      return ''
+    })
+    .join('')
+}
+
 function extractGroqContent(data: unknown): string {
   if (!data || typeof data !== 'object') return ''
   const choices = (data as { choices?: unknown }).choices
   if (!Array.isArray(choices) || !choices[0] || typeof choices[0] !== 'object') return ''
   const message = (choices[0] as { message?: unknown }).message
   if (!message || typeof message !== 'object') return ''
-  const content = (message as { content?: unknown }).content
-  return typeof content === 'string' ? content : ''
+  const content = asTextContent((message as { content?: unknown }).content)
+  if (content) return content
+  // gpt-oss may spend the visible payload on reasoning and leave content empty.
+  return asTextContent((message as { reasoning?: unknown }).reasoning)
+}
+
+function groqFinishReason(data: unknown): string {
+  if (!data || typeof data !== 'object') return ''
+  const choices = (data as { choices?: unknown }).choices
+  if (!Array.isArray(choices) || !choices[0] || typeof choices[0] !== 'object') return ''
+  const reason = (choices[0] as { finish_reason?: unknown }).finish_reason
+  return typeof reason === 'string' ? reason : ''
+}
+
+function groqErrorMessage(data: unknown): string {
+  if (!data || typeof data !== 'object') return ''
+  const error = (data as { error?: unknown }).error
+  if (typeof error === 'string') return error.trim()
+  if (error && typeof error === 'object' && typeof (error as { message?: unknown }).message === 'string') {
+    return (error as { message: string }).message.trim()
+  }
+  return ''
+}
+
+function groqFailedGeneration(data: unknown): string {
+  if (!data || typeof data !== 'object') return ''
+  const error = (data as { error?: unknown }).error
+  if (!error || typeof error !== 'object') return ''
+  const failed = (error as { failed_generation?: unknown }).failed_generation
+  return typeof failed === 'string' ? failed : ''
+}
+
+function isSchemaValidationError(data: unknown): boolean {
+  const message = groqErrorMessage(data)
+  return /schema|failed_generation|jsonschema|json_validate/i.test(message)
+}
+
+function throwForGroqStatus(status: number, data: unknown): never {
+  const groqMessage = groqErrorMessage(data)
+  if (status === 401 || /invalid api key|incorrect api key|unauthorized/i.test(groqMessage)) {
+    throw new GenerateHttpError(GENERATE_NOT_CONFIGURED, 500)
+  }
+  if (status === 429 || /rate limit/i.test(groqMessage)) {
+    throw new GenerateHttpError(TOO_MANY_REQUESTS, 429)
+  }
+  if (status === 403 || /access denied|network settings/i.test(groqMessage)) {
+    throw new GenerateHttpError(NETWORK_BLOCKED_ERROR, 502)
+  }
+  throw new GenerateHttpError(GENERIC_GENERATE_ERROR, 502)
 }
 
 function asBulletLines(points: string[]): string {
@@ -72,33 +156,215 @@ function asBulletLines(points: string[]): string {
     .join('\n')
 }
 
-function parseGenerateJson(text: string): GenerateResponse | null {
+function stripBulletPrefix(point: string): string {
+  return point.trim().replace(/^(?:[•\-*]|\d+[.)])\s*/, '').trim()
+}
+
+function scriptFromPoints(points: string[]): string {
+  return points
+    .map((point) => {
+      let sentence = stripBulletPrefix(point)
+      if (!sentence) return ''
+      if (!/[.!?]$/.test(sentence)) sentence += '.'
+      return sentence
+    })
+    .filter(Boolean)
+    .join(' ')
+}
+
+function bulletsFromScript(script: string): string {
+  const sentences = script
+    .split(/(?<=[.!?])\s+/)
+    .map((part) => part.trim())
+    .filter((part) => part.length > 8)
+    .slice(0, 6)
+  return asBulletLines(sentences.length >= 2 ? sentences : [script])
+}
+
+function extractJsonObject(text: string): string[] {
   const trimmed = text.trim()
   const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/)
   const raw = (fenced?.[1] ?? trimmed).trim()
-  const candidates = raw.startsWith('{') ? [raw] : [`{${raw}`]
-  for (const candidate of candidates) {
+  const start = raw.indexOf('{')
+  if (start < 0) return raw ? [raw, `{${raw}`] : []
+
+  const candidates: string[] = []
+  let depth = 0
+  let inString = false
+  let escape = false
+  for (let i = start; i < raw.length; i += 1) {
+    const char = raw[i]
+    if (inString) {
+      if (escape) escape = false
+      else if (char === '\\') escape = true
+      else if (char === '"') inString = false
+      continue
+    }
+    if (char === '"') inString = true
+    else if (char === '{') depth += 1
+    else if (char === '}') {
+      depth -= 1
+      if (depth === 0) {
+        candidates.push(raw.slice(start, i + 1))
+        break
+      }
+    }
+  }
+  if (!candidates.length) {
+    const end = raw.lastIndexOf('}')
+    candidates.push(end > start ? raw.slice(start, end + 1) : raw.slice(start))
+  }
+  return candidates
+}
+
+function tryParseObject(raw: string): Record<string, unknown> | null {
+  const attempts = [raw, raw.replace(/,\s*([}\]])/g, '$1')]
+  for (const attempt of attempts) {
     try {
-      const parsed = JSON.parse(candidate) as {
-        key_points?: unknown
-        bullets?: unknown
-        script?: unknown
+      const parsed = JSON.parse(attempt) as unknown
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed as Record<string, unknown>
       }
-      const script = typeof parsed.script === 'string' ? parsed.script.trim() : ''
-      let bullets = ''
-      if (Array.isArray(parsed.key_points)) {
-        bullets = asBulletLines(
-          parsed.key_points.filter((point): point is string => typeof point === 'string'),
-        )
-      } else if (typeof parsed.bullets === 'string') {
-        bullets = parsed.bullets.trim()
-      }
-      if (bullets && script) return { bullets, script }
     } catch {
-      /* try the next shape */
+      /* try the next repair */
     }
   }
   return null
+}
+
+const POINT_KEYS = ['key_points', 'keyPoints', 'talking_points', 'talkingPoints', 'bullets', 'points']
+const SCRIPT_KEYS = ['script', 'spoken_script', 'spokenScript', 'narration', 'spoken']
+
+function hasUsefulKeys(obj: Record<string, unknown>): boolean {
+  return POINT_KEYS.some((key) => key in obj) || SCRIPT_KEYS.some((key) => key in obj)
+}
+
+function unwrapPayload(obj: Record<string, unknown>): Record<string, unknown> {
+  if (hasUsefulKeys(obj)) return obj
+  for (const value of Object.values(obj)) {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      const nested = value as Record<string, unknown>
+      if (hasUsefulKeys(nested)) return nested
+    }
+  }
+  return obj
+}
+
+function asStringList(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => {
+      if (typeof item === 'string') return [item]
+      if (item && typeof item === 'object' && typeof (item as { text?: unknown }).text === 'string') {
+        return [(item as { text: string }).text]
+      }
+      return []
+    })
+  }
+  if (typeof value === 'string') {
+    return value
+      .split(/\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+  }
+  return []
+}
+
+function asScript(value: unknown): string {
+  if (typeof value === 'string') return value.trim()
+  if (Array.isArray(value)) {
+    return value
+      .filter((item): item is string => typeof item === 'string')
+      .join(' ')
+      .trim()
+  }
+  return ''
+}
+
+function parseGenerateJson(text: string): GenerateResponse | null {
+  for (const candidate of extractJsonObject(text)) {
+    const parsed = tryParseObject(candidate)
+    if (!parsed) continue
+    const payload = unwrapPayload(parsed)
+
+    let points: string[] = []
+    for (const key of POINT_KEYS) {
+      const found = asStringList(payload[key])
+      if (found.length) {
+        points = found
+        break
+      }
+    }
+
+    let script = ''
+    for (const key of SCRIPT_KEYS) {
+      const found = asScript(payload[key])
+      if (found) {
+        script = found
+        break
+      }
+    }
+
+    let bullets = points.length ? asBulletLines(points) : ''
+    if (!script && points.length) script = scriptFromPoints(points)
+    if (!bullets && script) bullets = bulletsFromScript(script)
+    if (bullets && script) return { bullets, script }
+  }
+  return null
+}
+
+function parseGroqPayload(data: unknown): GenerateResponse | null {
+  return (
+    parseGenerateJson(extractGroqContent(data)) ??
+    parseGenerateJson(groqFailedGeneration(data))
+  )
+}
+
+async function groqChat(
+  apiKey: string,
+  systemPrompt: string,
+  userContent: string,
+): Promise<{ status: number; data: unknown }> {
+  const upstream = await fetch(GROQ_CHAT_URL, {
+    method: 'POST',
+    signal: AbortSignal.timeout(GROQ_TIMEOUT_MS),
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${apiKey}`,
+      'user-agent': 'WhyWorkHere/1.0',
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_completion_tokens: MAX_COMPLETION_TOKENS,
+      temperature: 0.3,
+      reasoning_effort: 'low',
+      // json_schema + gpt-oss often 400s with missing `script`.
+      // json_object still yields JSON we can parse and recover.
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userContent },
+      ],
+    }),
+  })
+
+  let data: unknown
+  try {
+    data = await upstream.json()
+  } catch {
+    throw new GenerateHttpError(GENERIC_GENERATE_ERROR, 502)
+  }
+
+  return { status: upstream.status, data }
+}
+
+function throwIfUnusable(data: unknown): never {
+  if (groqFinishReason(data) === 'length') {
+    throw new GenerateHttpError(
+      'Could not finish generating. Try a shorter job description.',
+      502,
+    )
+  }
+  throw new GenerateHttpError(GENERIC_GENERATE_ERROR, 502)
 }
 
 async function generateWithGroq(
@@ -107,61 +373,35 @@ async function generateWithGroq(
 ): Promise<GenerateResponse> {
   const apiKey = process.env.GROQ_API_KEY
   if (!apiKey) {
-    throw new Error('Generate is not configured. Set GROQ_API_KEY on the server.')
+    throw new Error(GENERATE_NOT_CONFIGURED)
   }
 
   const userContent = companyBlurb
-    ? `Job description:\n${jobDescription}\n\nCompany blurb:\n${companyBlurb}`
-    : `Job description:\n${jobDescription}`
+    ? `Job description:\n${jobDescription}\n\nCompany blurb:\n${companyBlurb}\n\nReturn JSON with required keys "script" (one spoken-sentence string) and "key_points" (string array). Never omit script.`
+    : `Job description:\n${jobDescription}\n\nReturn JSON with required keys "script" (one spoken-sentence string) and "key_points" (string array). Never omit script.`
 
-  const upstream = await fetch(GROQ_CHAT_URL, {
-    method: 'POST',
-    signal: AbortSignal.timeout(GROQ_TIMEOUT_MS),
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      max_completion_tokens: MAX_COMPLETION_TOKENS,
-      temperature: 0.4,
-      reasoning_effort: 'low',
-      response_format: {
-        type: 'json_schema',
-        json_schema: {
-          name: 'generate_cues',
-          strict: true,
-          schema: {
-            type: 'object',
-            properties: {
-              key_points: {
-                type: 'array',
-                items: { type: 'string' },
-              },
-              script: { type: 'string' },
-            },
-            required: ['key_points', 'script'],
-            additionalProperties: false,
-          },
-        },
-      },
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: userContent },
-      ],
-    }),
-  })
-
-  if (!upstream.ok) {
-    throw new Error('Could not generate talking points. Try again in a moment.')
+  const first = await groqChat(apiKey, SYSTEM_PROMPT, userContent)
+  if (first.status === 200) {
+    const parsed = parseGroqPayload(first.data)
+    if (parsed) return parsed
+  } else if (isSchemaValidationError(first.data)) {
+    const recovered = parseGroqPayload(first.data)
+    if (recovered) return recovered
+  } else {
+    throwForGroqStatus(first.status, first.data)
   }
 
-  const data: unknown = await upstream.json()
-  const parsed = parseGenerateJson(extractGroqContent(data))
-  if (!parsed) {
-    throw new Error('Could not generate talking points. Try again in a moment.')
+  const retry = await groqChat(apiKey, RETRY_SYSTEM_PROMPT, userContent)
+  if (retry.status === 200) {
+    const parsed = parseGroqPayload(retry.data)
+    if (parsed) return parsed
+    throwIfUnusable(retry.data)
   }
-  return parsed
+  if (isSchemaValidationError(retry.data)) {
+    const recovered = parseGroqPayload(retry.data)
+    if (recovered) return recovered
+  }
+  throwForGroqStatus(retry.status, retry.data)
 }
 
 export default async function handler(request: Request): Promise<Response> {
@@ -201,11 +441,19 @@ export default async function handler(request: Request): Promise<Response> {
   try {
     return Response.json(await generateWithGroq(jobDescription, companyBlurb))
   } catch (caught) {
+    if (caught instanceof GenerateHttpError) {
+      return Response.json({ error: caught.message }, { status: caught.status })
+    }
     const message =
       caught instanceof Error && caught.message.startsWith('Generate is not configured')
         ? caught.message
-        : 'Could not generate talking points. Try again in a moment.'
-    const status = message.startsWith('Generate is not configured') ? 500 : 502
-    return Response.json({ error: message }, { status })
+        : GENERIC_GENERATE_ERROR
+    const timedOut =
+      caught instanceof Error && (caught.name === 'TimeoutError' || caught.name === 'AbortError')
+    const status = message.startsWith('Generate is not configured') ? 500 : timedOut ? 504 : 502
+    return Response.json(
+      { error: timedOut ? 'Generate timed out. Try again in a moment.' : message },
+      { status },
+    )
   }
 }

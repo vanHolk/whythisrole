@@ -16,7 +16,7 @@ export function PrivacyPage() {
       <main className="main">
         <section className="card guide-card privacy-card">
           <h1>Privacy & Terms</h1>
-          <p className="card-lede">Last updated: September 12, 2026</p>
+          <p className="card-lede">Last updated: September 13, 2026</p>
 
           <p>
             Why This Role is a browser-based tool that helps candidates who have
@@ -47,10 +47,14 @@ export function PrivacyPage() {
               the URL or the fetched page afterward.
             </li>
             <li>
-              Payment. If your clip is long enough to require payment, that
-              payment is processed directly by Stripe. We do not receive or
-              store your card details. Stripe&apos;s handling of payment data is
-              governed by their own privacy policy (<a href="https://stripe.com/privacy">stripe.com/privacy</a>).
+              Optional support. After you download a take, a Buy Me a Coffee
+              button may appear. That button loads a script from Buy Me a
+              Coffee&apos;s domain. Clicking it opens Buy Me a Coffee, which is
+              governed by their terms and privacy policy (
+              <a href="https://buymeacoffee.com/privacy-policy">
+                buymeacoffee.com/privacy-policy
+              </a>
+              ), not ours.
             </li>
             <li>
               Accounts and tracking. There are none. No sign-up, no login, no
@@ -109,6 +113,26 @@ export function PrivacyPage() {
           Not affiliated with LinkedIn.{' '}
           <a className="footer-link" href="/privacy">
             Privacy & Terms.
+          </a>
+        </p>
+        <p>
+          Made by Van Ho ·{' '}
+          <a
+            className="footer-link"
+            href="https://www.vanholker.com"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Portfolio
+          </a>
+          {' · '}
+          <a
+            className="footer-link"
+            href="https://www.linkedin.com/in/michael-holker-ba3b507b/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            LinkedIn
           </a>
         </p>
       </footer>
