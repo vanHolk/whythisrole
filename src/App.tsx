@@ -1,10 +1,10 @@
-import { Lock } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { AppHeader } from './components/AppHeader'
 import { BottomBar } from './components/BottomBar'
 import { CameraRecorder } from './components/CameraRecorder'
 import { CuePickerStep } from './components/CuePickerStep'
 import { FaqPage } from './components/FaqPage'
+import { FunnelFooter } from './components/FunnelFooter'
 import { GuidePage } from './components/GuidePage'
 import { HowLongArticlePage } from './components/guide/HowLongArticlePage'
 import {
@@ -172,38 +172,7 @@ function Funnel() {
             onGenerated={handleGenerated}
           />
 
-          <footer className="footer">
-            <p className="footer-trust">
-              <Lock size={18} strokeWidth={2} aria-hidden="true" />
-              Video never leaves this browser tab. No account.
-            </p>
-            <p>
-              Not affiliated with LinkedIn.{' '}
-              <a className="footer-link" href="/privacy">
-                Privacy & Terms.
-              </a>
-            </p>
-            <p>
-              Made by Van Ho ·{' '}
-              <a
-                className="footer-link"
-                href="https://www.vanholker.com"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Portfolio
-              </a>
-              {' · '}
-              <a
-                className="footer-link"
-                href="https://www.linkedin.com/in/michael-holker-ba3b507b/"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                LinkedIn
-              </a>
-            </p>
-          </footer>
+          <FunnelFooter />
         </main>
       ) : null}
 
@@ -228,38 +197,7 @@ function Funnel() {
             onPick={pick}
           />
 
-          <footer className="footer">
-            <p className="footer-trust">
-              <Lock size={18} strokeWidth={2} aria-hidden="true" />
-              Video never leaves this browser tab. No account.
-            </p>
-            <p>
-              Not affiliated with LinkedIn.{' '}
-              <a className="footer-link" href="/privacy">
-                Privacy & Terms.
-              </a>
-            </p>
-            <p>
-              Made by Van Ho ·{' '}
-              <a
-                className="footer-link"
-                href="https://www.vanholker.com"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Portfolio
-              </a>
-              {' · '}
-              <a
-                className="footer-link"
-                href="https://www.linkedin.com/in/michael-holker-ba3b507b/"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                LinkedIn
-              </a>
-            </p>
-          </footer>
+          <FunnelFooter />
         </main>
       ) : null}
 

@@ -1,12 +1,13 @@
-import { ThemePicker } from '../ThemePicker'
+import { Lock } from 'lucide-react'
+import { ThemePicker } from './ThemePicker'
 
-export function EditorialFooter() {
+export function FunnelFooter() {
   return (
-    <footer className="editorial-footer">
-      <nav className="editorial-footer-nav" aria-label="Footer">
-        <a href="/">Home</a>
-        <a href="/privacy">Privacy</a>
-      </nav>
+    <footer className="footer">
+      <p className="footer-trust">
+        <Lock size={18} strokeWidth={2} aria-hidden="true" />
+        Video never leaves this browser tab. No account.
+      </p>
       <ThemePicker />
       <p>
         Not affiliated with LinkedIn.{' '}

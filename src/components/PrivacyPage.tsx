@@ -1,3 +1,5 @@
+import { ThemePicker } from './ThemePicker'
+
 export function PrivacyPage() {
   return (
     <div className="page">
@@ -108,6 +110,7 @@ export function PrivacyPage() {
       </main>
 
       <footer className="footer">
+        <ThemePicker />
         <p>
           Not affiliated with LinkedIn.{' '}
           <a className="footer-link" href="/privacy">
