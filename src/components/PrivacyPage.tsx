@@ -1,4 +1,4 @@
-import { ThemePicker } from './ThemePicker'
+import { SiteFooter } from './SiteFooter'
 
 export function PrivacyPage() {
   return (
@@ -109,35 +109,7 @@ export function PrivacyPage() {
         </section>
       </main>
 
-      <footer className="footer">
-        <ThemePicker />
-        <p>
-          Not affiliated with LinkedIn.{' '}
-          <a className="footer-link" href="/privacy">
-            Privacy & Terms.
-          </a>
-        </p>
-        <p>
-          Made by Van Ho ·{' '}
-          <a
-            className="footer-link"
-            href="https://www.vanholker.com"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Portfolio
-          </a>
-          {' · '}
-          <a
-            className="footer-link"
-            href="https://www.linkedin.com/in/michael-holker-ba3b507b/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            LinkedIn
-          </a>
-        </p>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

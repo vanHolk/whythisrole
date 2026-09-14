@@ -539,33 +539,6 @@
   color: var(--blue);
 }
 
-.editorial-footer {
-  margin-top: auto;
-  padding: 24px 24px 32px;
-  border-top: 1px solid var(--line);
-  text-align: center;
-  color: var(--muted);
-  font-size: 12px;
-  background: var(--card);
-}
-
-.editorial-footer-nav {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-  margin-bottom: 10px;
-}
-
-.editorial-footer a {
-  color: inherit;
-  text-underline-offset: 2px;
-}
-
-.editorial-footer p + p {
-  margin-top: 4px;
-}
-
 @media (min-width: 640px) {
   .related-grid {
     grid-template-columns: repeat(3, 1fr);
