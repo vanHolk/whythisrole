@@ -1,4 +1,4 @@
-import { AlertCircle, Building2, FileText, Link as LinkIcon, LoaderCircle } from 'lucide-react'
+import { AlertCircle, FileText, Link as LinkIcon, LoaderCircle, User } from 'lucide-react'
 import { useRef, useState, type FormEvent } from 'react'
 import {
   GENERATE_MAX_CHARS,
@@ -22,9 +22,11 @@ function isHttpUrl(raw: string): boolean {
 
 type JobPasteStepProps = {
   jobDescription: string
-  companyBlurb: string
+  candidateSkills: string
+  writeOwnScript: boolean
   onJobDescriptionChange: (value: string) => void
-  onCompanyBlurbChange: (value: string) => void
+  onCandidateSkillsChange: (value: string) => void
+  onWriteOwnScriptChange: (value: boolean) => void
   onGenerated: (output: { bullets: string; script: string }) => void
 }
 
@@ -36,9 +38,11 @@ type FetchJobResponse = {
 
 export function JobPasteStep({
   jobDescription,
-  companyBlurb,
+  candidateSkills,
+  writeOwnScript,
   onJobDescriptionChange,
-  onCompanyBlurbChange,
+  onCandidateSkillsChange,
+  onWriteOwnScriptChange,
   onGenerated,
 }: JobPasteStepProps) {
   const [jobUrl, setJobUrl] = useState('')
@@ -84,7 +88,7 @@ export function JobPasteStep({
     }
   }
 
-  const combinedLength = combinedGenerateLength(jobDescription, companyBlurb)
+  const combinedLength = combinedGenerateLength(jobDescription, candidateSkills)
   const tooShort = jobDescription.trim().length < GENERATE_MIN_CHARS
   const tooLong = combinedLength > GENERATE_MAX_CHARS
   const lengthError = tooLong ? generateTooLongMessage(combinedLength) : null
@@ -92,7 +96,7 @@ export function JobPasteStep({
   async function handleGenerate(event: FormEvent) {
     event.preventDefault()
     setError(null)
-    const inputError = validateGenerateInput(jobDescription, companyBlurb)
+    const inputError = validateGenerateInput(jobDescription, candidateSkills)
     if (inputError) {
       setError(inputError)
       return
@@ -102,7 +106,7 @@ export function JobPasteStep({
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ jobDescription, companyBlurb }),
+        body: JSON.stringify({ jobDescription, candidateSkills }),
       })
       const payload = (await response.json()) as {
         bullets?: string
@@ -124,8 +128,10 @@ export function JobPasteStep({
     <section className="card">
       <h2>Paste the job they asked you about</h2>
       <p className="card-lede">
-        Drop in the posting, or try a job URL. Fetch is best-effort. Paste is
-        the path that always works. Nothing is saved.
+        Drop in the posting, or try a job URL. Then add a few notes about
+        yourself so the talking points can connect your experience to the
+        role. Fetch is best-effort. Paste is the path that always works.
+        Nothing is saved.
       </p>
 
       <form className="stack" onSubmit={handleGenerate} noValidate>
@@ -205,30 +211,40 @@ export function JobPasteStep({
 
         <label className="field">
           <span className="field-label">
-            <Building2 size={18} strokeWidth={2} aria-hidden="true" />
-            Company blurb <em>(optional)</em>
+            <User size={18} strokeWidth={2} aria-hidden="true" />
+            Your skills &amp; experience <em>(optional)</em>
           </span>
           <textarea
-            rows={3}
-            value={companyBlurb}
+            rows={4}
+            value={candidateSkills}
             onChange={(event) => {
               setError(null)
-              onCompanyBlurbChange(event.target.value)
+              onCandidateSkillsChange(event.target.value)
             }}
-            placeholder="A sentence or two about the company, if you have it."
+            placeholder="Years in the field, tools you use, a project you shipped, languages… whatever makes the answer yours."
           />
         </label>
 
         {lengthError || error ? (
           <p className="form-error">{lengthError ?? error}</p>
         ) : null}
-        <button
-          type="submit"
-          className="btn-primary"
-          disabled={generating || fetching || tooShort || tooLong}
-        >
-          {generating ? 'Generating…' : 'Generate talking points'}
-        </button>
+        <div className="generate-row">
+          <button
+            type="submit"
+            className="btn-primary"
+            disabled={generating || fetching || tooShort || tooLong}
+          >
+            {generating ? 'Generating…' : 'Generate talking points'}
+          </button>
+          <label className="write-own">
+            <input
+              type="checkbox"
+              checked={writeOwnScript}
+              onChange={(event) => onWriteOwnScriptChange(event.target.checked)}
+            />
+            I want to write my own script
+          </label>
+        </div>
       </form>
     </section>
   )

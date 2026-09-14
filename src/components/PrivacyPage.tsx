@@ -36,8 +36,8 @@ export function PrivacyPage() {
               browser tab stays open, until you download it.
             </li>
             <li>
-              Text you paste. The job description and company blurb you paste
-              in are sent to Groq&apos;s API solely to generate talking
+              Text you paste. The job description and any skills or experience
+              notes you add are sent to Groq&apos;s API solely to generate talking
               points and a script for you to edit. We do not store this text
               ourselves. Groq&apos;s handling of that data is governed by
               their own privacy policy (<a href="https://groq.com/privacy-policy">groq.com/privacy-policy</a>).

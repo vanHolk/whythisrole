@@ -80,7 +80,16 @@ function CueOption({
         <h3>{title}</h3>
         <p>{hint}</p>
       </div>
-      <textarea rows={12} value={value} onChange={(event) => onChange(event.target.value)} />
+      <textarea
+        rows={12}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={
+          title === 'Talking points'
+            ? '• What caught my attention\n• A relevant thing I’ve done\n• Why this role makes sense now'
+            : 'What caught my attention about this role was…'
+        }
+      />
       <button
         type="button"
         className={selected ? 'btn-primary' : 'btn-secondary'}

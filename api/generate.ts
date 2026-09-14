@@ -28,18 +28,23 @@ class GenerateHttpError extends Error {
 
 type GenerateBody = {
   jobDescription?: unknown
+  candidateSkills?: unknown
   companyBlurb?: unknown
 }
 
 const SYSTEM_PROMPT = [
   'You help a job candidate record a 45–90 second first-person video answer.',
-  'Use the job description and optional company blurb as context only.',
+  'Use the job description to understand the role.',
+  'Use the candidate’s own skills and experience as the only source of proof.',
+  'Cross-reference: connect what they have actually done to what the role needs.',
+  'Do not invent jobs, years, tools, companies, or achievements they did not mention.',
+  'If they left skills blank, write a tight generic structure they can edit. Do not fabricate a biography.',
   'Do not quote, dump, or paraphrase the posting at length.',
   'Respond with one JSON object only. Both keys are required. Never omit script.',
   'Put script first so it is never dropped:',
   '{"script":"A single string of spoken first-person sentences they can say aloud in 45-90 seconds. Natural speech, no lists, no bullets.","key_points":["short first-person talking point","another talking point"]}',
   'script MUST be one string of spoken sentences, never an array, never empty, never omitted.',
-  'key_points MUST be an array of 4-6 short first-person strings.',
+  'key_points MUST be an array of 4-6 short first-person strings that mix the role with their stated experience when provided.',
   'Do not wrap the object, do not add other keys, do not return key_points without script.',
 ].join(' ')
 
@@ -50,12 +55,14 @@ const RETRY_SYSTEM_PROMPT = [
   'If you only have talking points, still write script as those points spoken aloud in sentences.',
 ].join(' ')
 
-export function mockGenerate(_jobDescription: string, _companyBlurb: string) {
+export function mockGenerate(_jobDescription: string, candidateSkills: string) {
   const bullets = [
     '• Why this work: the problem is concrete, and I can already see where I would contribute',
-    '• Proof: one short example of similar work I have shipped, including the tradeoff I made',
+    candidateSkills
+      ? '• Proof: I can point to the experience I added, including a tradeoff I made'
+      : '• Proof: one short example of similar work I have shipped, including the tradeoff I made',
     '• First 90 days: learn how success is measured here, then deliver one visible win',
-    '• Why this company: the mission and the way they work both fit how I like to operate',
+    '• Why this company: the way they work fits how I like to operate',
     '• Close: I can keep this answer tight — I want the work, not a speech',
   ].join('\n')
 
@@ -367,18 +374,29 @@ function throwIfUnusable(data: unknown): never {
   throw new GenerateHttpError(GENERIC_GENERATE_ERROR, 502)
 }
 
+function buildUserContent(jobDescription: string, candidateSkills: string): string {
+  const skillsBlock = candidateSkills
+    ? `Candidate’s own skills and experience (use only what they wrote; do not invent more):\n${candidateSkills}`
+    : 'The candidate did not add skills. Do not invent a biography. Write a tight first-person answer they can edit with their own examples.'
+
+  return [
+    `Job description:\n${jobDescription}`,
+    skillsBlock,
+    'Cross-reference the role with their experience. Connect what they have done to what the job needs.',
+    'Return JSON with required keys "script" (one spoken-sentence string) and "key_points" (string array). Never omit script.',
+  ].join('\n\n')
+}
+
 async function generateWithGroq(
   jobDescription: string,
-  companyBlurb: string,
+  candidateSkills: string,
 ): Promise<GenerateResponse> {
   const apiKey = process.env.GROQ_API_KEY
   if (!apiKey) {
     throw new Error(GENERATE_NOT_CONFIGURED)
   }
 
-  const userContent = companyBlurb
-    ? `Job description:\n${jobDescription}\n\nCompany blurb:\n${companyBlurb}\n\nReturn JSON with required keys "script" (one spoken-sentence string) and "key_points" (string array). Never omit script.`
-    : `Job description:\n${jobDescription}\n\nReturn JSON with required keys "script" (one spoken-sentence string) and "key_points" (string array). Never omit script.`
+  const userContent = buildUserContent(jobDescription, candidateSkills)
 
   const first = await groqChat(apiKey, SYSTEM_PROMPT, userContent)
   if (first.status === 200) {
@@ -417,8 +435,8 @@ export default async function handler(request: Request): Promise<Response> {
   }
 
   const jobDescription = String(body.jobDescription ?? '').trim()
-  const companyBlurb = String(body.companyBlurb ?? '').trim()
-  const inputError = validateGenerateInput(jobDescription, companyBlurb)
+  const candidateSkills = String(body.candidateSkills ?? body.companyBlurb ?? '').trim()
+  const inputError = validateGenerateInput(jobDescription, candidateSkills)
   if (inputError) {
     return Response.json({ error: inputError }, { status: 400 })
   }
@@ -435,11 +453,11 @@ export default async function handler(request: Request): Promise<Response> {
   if (limited) return limited
 
   if (usingMock) {
-    return Response.json(mockGenerate(jobDescription, companyBlurb))
+    return Response.json(mockGenerate(jobDescription, candidateSkills))
   }
 
   try {
-    return Response.json(await generateWithGroq(jobDescription, companyBlurb))
+    return Response.json(await generateWithGroq(jobDescription, candidateSkills))
   } catch (caught) {
     if (caught instanceof GenerateHttpError) {
       return Response.json({ error: caught.message }, { status: caught.status })

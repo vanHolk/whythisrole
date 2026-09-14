@@ -49,10 +49,11 @@ export default function App() {
 function Funnel() {
   const [step, setStep] = useState<Step>(1)
   const [jobDescription, setJobDescription] = useState('')
-  const [companyBlurb, setCompanyBlurb] = useState('')
+  const [candidateSkills, setCandidateSkills] = useState('')
   const [bullets, setBullets] = useState('')
   const [script, setScript] = useState('')
   const [hasGenerated, setHasGenerated] = useState(false)
+  const [writeOwnScript, setWriteOwnScript] = useState(false)
   const [selection, setSelection] = useState<CueSelection | null>(null)
   const [clip, setClip] = useState<RecordedClip | null>(null)
   const [prompterSpeed, setPrompterSpeed] = useState<PrompterSpeed>('normal')
@@ -65,7 +66,7 @@ function Funnel() {
     null,
   )
 
-  const canGoToStep2 = hasGenerated
+  const canGoToStep2 = hasGenerated || writeOwnScript
   const canGoToStep3 = Boolean(selection)
   const resultCopy = clip ? `This take is ${formatTimer(clip.durationMs)}.` : null
 
@@ -159,16 +160,20 @@ function Funnel() {
             <div className="hero-copy">
               <h1 className="display">A short recording, with a script running right over the camera.</h1>
               <p>
-                Paste the job post and get a script or bullet points to read from. It stays on your device, never uploaded.
+                Paste the job post, add a few notes about yourself, and get a
+                script or bullet points to read from. It stays on your device,
+                never uploaded.
               </p>
             </div>
           </section>
 
           <JobPasteStep
             jobDescription={jobDescription}
-            companyBlurb={companyBlurb}
+            candidateSkills={candidateSkills}
             onJobDescriptionChange={setJobDescription}
-            onCompanyBlurbChange={setCompanyBlurb}
+            onCandidateSkillsChange={setCandidateSkills}
+            writeOwnScript={writeOwnScript}
+            onWriteOwnScriptChange={setWriteOwnScript}
             onGenerated={handleGenerated}
           />
 

@@ -6,21 +6,21 @@ export const GENERATE_TOO_SHORT =
 
 export function combinedGenerateLength(
   jobDescription: string,
-  companyBlurb: string,
+  candidateSkills: string,
 ): number {
-  return jobDescription.trim().length + companyBlurb.trim().length
+  return jobDescription.trim().length + candidateSkills.trim().length
 }
 
 export function generateTooLongMessage(combinedLength: number): string {
-  return `That's too long (${combinedLength} / ${GENERATE_MAX_CHARS} characters). Shorten the job description and company blurb.`
+  return `That's too long (${combinedLength} / ${GENERATE_MAX_CHARS} characters). Shorten the job description or your skills notes.`
 }
 
 export function validateGenerateInput(
   jobDescription: string,
-  companyBlurb: string,
+  candidateSkills: string,
 ): string | null {
   if (jobDescription.trim().length < GENERATE_MIN_CHARS) return GENERATE_TOO_SHORT
-  const combined = combinedGenerateLength(jobDescription, companyBlurb)
+  const combined = combinedGenerateLength(jobDescription, candidateSkills)
   if (combined > GENERATE_MAX_CHARS) return generateTooLongMessage(combined)
   return null
 }

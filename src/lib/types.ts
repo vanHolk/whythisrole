@@ -2,7 +2,7 @@ export type CueMode = 'bullets' | 'script'
 
 export type GenerateRequest = {
   jobDescription: string
-  companyBlurb: string
+  candidateSkills: string
 }
 
 export type GenerateResponse = {
