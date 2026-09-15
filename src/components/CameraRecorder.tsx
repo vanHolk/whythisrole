@@ -10,7 +10,16 @@ import {
   pickTakeToast,
   type PrompterSpeed,
 } from '../lib/constants'
-import { cameraErrorMessage, getCameraMicStream, isTouchRecordingDevice } from '../lib/media'
+import {
+  cameraDeniedHelp,
+  cameraErrorMessage,
+  cameraIdleHint,
+  cameraPendingHint,
+  getCameraMicStream,
+  isPermissionDeniedError,
+  isTouchRecordingDevice,
+  type CameraDeniedHelp,
+} from '../lib/media'
 import { pickRecorderFormat } from '../lib/recording'
 import type { CueMode, RecordedClip } from '../lib/types'
 import { AudioMeter } from './AudioMeter'
@@ -67,6 +76,8 @@ export function CameraRecorder({
     'idle',
   )
   const [error, setError] = useState<string | null>(null)
+  const [deniedHelp, setDeniedHelp] = useState<CameraDeniedHelp | null>(null)
+  const idleHint = cameraIdleHint()
   const [elapsedMs, setElapsedMs] = useState(0)
   const [previewing, setPreviewing] = useState(false)
   const [cueSession, setCueSession] = useState(0)
@@ -158,6 +169,7 @@ export function CameraRecorder({
   async function enableCamera(attachPreview = true) {
     const streamPromise = getCameraMicStream()
     setError(null)
+    setDeniedHelp(null)
     setPermissionState('pending')
     try {
       const stream = await streamPromise
@@ -186,6 +198,7 @@ export function CameraRecorder({
       setPhase((current) =>
         current === 'review' || current === 'download' ? current : 'need-permission',
       )
+      setDeniedHelp(isPermissionDeniedError(error) ? cameraDeniedHelp(error) : null)
       setError(cameraErrorMessage(error))
     }
   }
@@ -433,8 +446,10 @@ export function CameraRecorder({
           <div className="stage-empty is-light">
             <p>
               {permissionState === 'pending'
-                ? 'Allow camera and microphone when the browser asks.'
-                : 'Turn on your camera when you are ready to record.'}
+                ? cameraPendingHint()
+                : permissionState === 'denied'
+                  ? 'The camera didn’t turn on.'
+                  : 'Turn on your camera when you are ready to record.'}
             </p>
             {permissionState !== 'pending' ? (
               <button
@@ -444,6 +459,9 @@ export function CameraRecorder({
               >
                 Enable camera
               </button>
+            ) : null}
+            {permissionState === 'idle' && idleHint ? (
+              <p className="stage-empty-hint">{idleHint}</p>
             ) : null}
           </div>
         ) : null}
@@ -492,7 +510,11 @@ export function CameraRecorder({
         ) : null}
       </div>
 
-      {error ? <p className="form-error">{error}</p> : null}
+      {deniedHelp ? (
+        <CameraHelpCard help={deniedHelp} />
+      ) : error ? (
+        <p className="form-error">{error}</p>
+      ) : null}
 
       {phase === 'ready' ? (
         <div className="ready-panel">
@@ -631,6 +653,20 @@ function SpeedBars({ speed }: { speed: PrompterSpeed }) {
         <i key={index} />
       ))}
     </span>
+  )
+}
+
+function CameraHelpCard({ help }: { help: CameraDeniedHelp }) {
+  return (
+    <div className="camera-help" role="status">
+      <p className="camera-help-title">{help.title}</p>
+      <ol>
+        {help.steps.map((step) => (
+          <li key={step}>{step}</li>
+        ))}
+      </ol>
+      {help.note ? <p className="camera-help-note">{help.note}</p> : null}
+    </div>
   )
 }
 

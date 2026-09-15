@@ -1,5 +1,16 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(self), microphone=(self)"
+        }
+      ]
+    }
+  ],
   "rewrites": [
     { "source": "/guide", "destination": "/index.html" },
     { "source": "/guide/how-long-should-a-video-interview-answer-be", "destination": "/index.html" },
