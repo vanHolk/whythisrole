@@ -14,6 +14,7 @@
   "rewrites": [
     { "source": "/guide", "destination": "/index.html" },
     { "source": "/guide/how-long-should-a-video-interview-answer-be", "destination": "/index.html" },
+    { "source": "/guide/how-to-practice-for-a-video-interview", "destination": "/index.html" },
     { "source": "/guide/:slug", "destination": "/index.html" },
     { "source": "/faq", "destination": "/index.html" },
     { "source": "/privacy", "destination": "/index.html" }

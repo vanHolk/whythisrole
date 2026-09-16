@@ -4,7 +4,7 @@ import { Callout } from './guide/Callout'
 import { CtaCard } from './guide/CtaCard'
 import { EditorialFooter } from './guide/EditorialFooter'
 import { EditorialHeader } from './guide/EditorialHeader'
-import { EMPLOYERS_LOOK_FOR_PATH, HOW_LONG_GUIDE_PATH, READ_FROM_SCRIPT_PATH } from './guide/paths'
+import { EMPLOYERS_LOOK_FOR_PATH, HOW_LONG_GUIDE_PATH, PRACTICE_GUIDE_PATH, READ_FROM_SCRIPT_PATH } from './guide/paths'
 import { RelatedPostCard } from './guide/RelatedPostCard'
 import { Toc } from './guide/Toc'
 import './guide/editorial.css'
@@ -620,6 +620,11 @@ export function GuidePage() {
                   href={READ_FROM_SCRIPT_PATH}
                   title="How to read from a script without looking like you’re reading"
                   dek="Eye line, pacing, and sounding like yourself on camera."
+                />
+                <RelatedPostCard
+                  href={PRACTICE_GUIDE_PATH}
+                  title="How to practice for a video interview by recording yourself"
+                  dek="A simple three-take routine for making your answer clearer without sounding over-rehearsed."
                 />
               </div>
             </section>

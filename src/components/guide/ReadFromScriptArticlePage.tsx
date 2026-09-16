@@ -9,6 +9,7 @@ import { Toc } from './Toc'
 import {
   EMPLOYERS_LOOK_FOR_PATH,
   HOW_LONG_GUIDE_PATH,
+  PRACTICE_GUIDE_PATH,
   WHY_HERE_GUIDE_PATH,
 } from './paths'
 import './editorial.css'
@@ -692,6 +693,11 @@ export function ReadFromScriptArticlePage() {
                   href={EMPLOYERS_LOOK_FOR_PATH}
                   title="What employers are actually looking for when they ask for a video interview"
                   dek="They want a clear, genuine answer — not a perfect performance."
+                />
+                <RelatedPostCard
+                  href={PRACTICE_GUIDE_PATH}
+                  title="How to practice for a video interview by recording yourself"
+                  dek="A simple three-take routine for making your answer clearer without sounding over-rehearsed."
                 />
               </div>
             </section>

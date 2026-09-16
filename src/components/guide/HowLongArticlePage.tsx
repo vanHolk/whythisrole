@@ -6,7 +6,7 @@ import { EditorialFooter } from './EditorialFooter'
 import { EditorialHeader } from './EditorialHeader'
 import { RelatedPostCard } from './RelatedPostCard'
 import { Toc } from './Toc'
-import { EMPLOYERS_LOOK_FOR_PATH, READ_FROM_SCRIPT_PATH, WHY_HERE_GUIDE_PATH } from './paths'
+import { EMPLOYERS_LOOK_FOR_PATH, PRACTICE_GUIDE_PATH, READ_FROM_SCRIPT_PATH, WHY_HERE_GUIDE_PATH } from './paths'
 import './editorial.css'
 
 export { HOW_LONG_GUIDE_PATH } from './paths'
@@ -583,8 +583,9 @@ export function HowLongArticlePage() {
                   dek="Eye line, pacing, and sounding like yourself on camera."
                 />
                 <RelatedPostCard
-                  title="Bullet points vs. a full script: which sounds better on camera?"
-                  dek="When notes help, and when a script starts to show."
+                  href={PRACTICE_GUIDE_PATH}
+                  title="How to practice for a video interview by recording yourself"
+                  dek="A simple three-take routine for making your answer clearer without sounding over-rehearsed."
                 />
                 <RelatedPostCard
                   title="How to stop rambling and keep your answer tight"

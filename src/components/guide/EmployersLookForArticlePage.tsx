@@ -6,7 +6,7 @@ import { EditorialFooter } from './EditorialFooter'
 import { EditorialHeader } from './EditorialHeader'
 import { RelatedPostCard } from './RelatedPostCard'
 import { Toc } from './Toc'
-import { HOW_LONG_GUIDE_PATH, READ_FROM_SCRIPT_PATH, WHY_HERE_GUIDE_PATH } from './paths'
+import { HOW_LONG_GUIDE_PATH, PRACTICE_GUIDE_PATH, READ_FROM_SCRIPT_PATH, WHY_HERE_GUIDE_PATH } from './paths'
 import './editorial.css'
 
 const PAGE_TITLE =
@@ -605,6 +605,11 @@ export function EmployersLookForArticlePage() {
                   href={READ_FROM_SCRIPT_PATH}
                   title="How to read from a script without looking like you’re reading"
                   dek="Eye line, pacing, and sounding like yourself on camera."
+                />
+                <RelatedPostCard
+                  href={PRACTICE_GUIDE_PATH}
+                  title="How to practice for a video interview by recording yourself"
+                  dek="A simple three-take routine for making your answer clearer without sounding over-rehearsed."
                 />
               </div>
             </section>
