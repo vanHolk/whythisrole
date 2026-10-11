@@ -157,10 +157,23 @@ async function composeWatermarkedBlob(
     throw new Error('compositor unavailable')
   }
 
+  const AudioCtx =
+    window.AudioContext ||
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+  if (!AudioCtx) {
+    throw new Error('AudioContext unavailable')
+  }
+
+  // Resume in this turn so a Download click still counts as the user gesture.
+  const audioContext = new AudioCtx()
+  const resumeAudio = audioContext.resume()
+
   const objectUrl = URL.createObjectURL(blob)
   const video = document.createElement('video')
   video.playsInline = true
-  video.muted = true
+  video.muted = false
+  video.defaultMuted = false
+  video.volume = 1
   video.preload = 'auto'
   video.crossOrigin = 'anonymous'
   video.src = objectUrl
@@ -170,16 +183,6 @@ async function composeWatermarkedBlob(
     'position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none;z-index:-1'
   document.body.append(video)
 
-  const AudioCtx =
-    window.AudioContext ||
-    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-  if (!AudioCtx) {
-    video.remove()
-    URL.revokeObjectURL(objectUrl)
-    throw new Error('AudioContext unavailable')
-  }
-
-  const audioContext = new AudioCtx()
   let recorder: MediaRecorder | null = null
   let mixed: MediaStream | null = null
   let canvasStream: MediaStream | null = null
@@ -230,19 +233,27 @@ async function composeWatermarkedBlob(
     paint()
 
     canvasStream = canvas.captureStream(30)
+    await resumeAudio
     if (audioContext.state === 'suspended') {
       await audioContext.resume()
     }
 
     const dest = audioContext.createMediaStreamDestination()
     const source = audioContext.createMediaElementSource(video)
+    const silent = audioContext.createGain()
+    silent.gain.value = 0
     source.connect(dest)
+    source.connect(silent)
+    silent.connect(audioContext.destination)
 
     mixed = new MediaStream()
     for (const track of canvasStream.getVideoTracks()) mixed.addTrack(track)
     for (const track of dest.stream.getAudioTracks()) mixed.addTrack(track)
     if (mixed.getVideoTracks().length === 0) {
       throw new Error('no video track')
+    }
+    if (mixed.getAudioTracks().length === 0) {
+      throw new Error('no audio track')
     }
 
     const mimeType = pickCompositorMime(blob.type)
@@ -280,7 +291,13 @@ async function composeWatermarkedBlob(
     }
 
     video.currentTime = 0
-    await video.play()
+    video.muted = false
+    video.volume = 1
+    try {
+      await video.play()
+    } catch {
+      throw new Error('unmuted playback failed')
+    }
 
     const durationHint =
       Number.isFinite(video.duration) && video.duration > 0
